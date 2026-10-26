@@ -1,0 +1,11 @@
+{
+  "name": "komad",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Konversi Matriks Menjadi Draft",
+  "scripts": {
+    "test": "node tests/test-matrix-reader.mjs && node tests/test-issue-locations.mjs && node tests/test-pwa.mjs",
+    "build": "python3 scripts/build-pwa.py"
+  }
+}

@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="id">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width,initial-scale=1" name="viewport"/>
+  <title>
+   KOMAD · Konversi Matriks Menjadi Draft
+  </title>
+  <meta content="#092e53" name="theme-color"/>
+  <meta content="Ubah matriks harmonisasi menjadi draft Word. Periksa catatan, lihat lokasi teks, dan gunakan secara offline setelah persiapan selesai." name="description"/>
+  <link href="style.css" rel="stylesheet"/>
+  <link href="manifest.webmanifest" rel="manifest"/>
+  <link href="assets/icon-192.png" rel="icon"/>
+  <link href="assets/apple-touch-icon.png" rel="apple-touch-icon"/>
+  <script defer="" src="vendor/jszip.min.js">
+  </script>
+  <script defer="" src="pwa-status.js">
+  </script>
+  <script defer="" src="pwa.js">
+  </script>
+  <script src="js/app.js" type="module">
+  </script>
+ </head>
+ <body>
+  <a class="sr-only" href="#workspace">
+   Langsung ke ruang kerja
+  </a>
+  <div class="app" id="app">
+   <aside class="sidebar">
+    <img alt="KOMAD — Konversi Matriks Menjadi Draft" class="brand" src="assets/logo-komad.png"/>
+    <div class="work-label eyebrow">
+     Ruang kerja perancang
+    </div>
+    <nav aria-label="Tahap penyusunan" class="steps">
+     <button aria-current="step" class="step" data-stage="1">
+      <span class="num">
+       1
+      </span>
+      Pilih matriks
+     </button>
+     <button class="step" data-stage="2">
+      <span class="num">
+       2
+      </span>
+      Periksa draft
+     </button>
+     <button class="step" data-stage="3">
+      <span class="num">
+       3
+      </span>
+      Unduh Word
+     </button>
+    </nav>
+    <div class="sidebar-bottom">
+     <div class="app-id">
+      <img alt="Ikon aplikasi KOMAD" src="assets/icon-komad.png"/>
+      <div>
+       <strong>
+        KOMAD
+       </strong>
+       <br/>
+       <span class="muted">
+        Matriks menjadi draft.
+       </span>
+      </div>
+     </div>
+     <button class="text small" id="install-info">
+      Tentang penggunaan offline
+     </button>
+     <section aria-label="Kesiapan aplikasi" class="app-health">
+      <strong data-state="loading" id="offline-status" role="status">
+       Memeriksa kesiapan offline…
+      </strong>
+      <details>
+       <summary>
+        Pemasangan dan pembaruan
+       </summary>
+       <p id="offline-detail">
+       </p>
+       <p id="app-version">
+        Versi 1.0.0
+       </p>
+       <button id="install-app">
+        Pasang aplikasi
+       </button>
+       <p id="install-result" role="status">
+       </p>
+       <button id="check-update">
+        Periksa pembaruan
+       </button>
+       <button class="primary" hidden="" id="update-app">
+        Perbarui aplikasi
+       </button>
+       <p id="update-note" role="status">
+       </p>
+       <details class="offline-diagnostics" hidden="" id="offline-diagnostics">
+        <summary>
+         Info kendala offline
+        </summary>
+        <textarea aria-label="Info kendala offline" id="offline-diagnostic-text" readonly=""></textarea>
+        <button id="copy-offline-diagnostic">
+         Salin info kendala
+        </button>
+        <p id="copy-offline-result" role="status">
+        </p>
+       </details>
+      </details>
+     </section>
+    </div>
+   </aside>
+   <main class="main" id="workspace">
+    <header class="topbar">
+     <div>
+      <span class="title">
+       Penyusunan draft peraturan
+      </span>
+      <span class="preview-label">
+       Versi 1.0.0
+      </span>
+     </div>
+     <div class="top-actions">
+      <label class="scale-control" for="text-size">
+       Tulisan
+       <select aria-label="Ukuran tulisan" id="text-size">
+        <option value="25">
+         25%
+        </option>
+        <option value="50">
+         50%
+        </option>
+        <option value="75">
+         75%
+        </option>
+        <option selected="" value="100">
+         100%
+        </option>
+        <option value="125">
+         125%
+        </option>
+        <option value="150">
+         150%
+        </option>
+        <option value="175">
+         175%
+        </option>
+        <option value="200">
+         200%
+        </option>
+       </select>
+      </label>
+      <button class="small" id="help">
+       Panduan
+      </button>
+     </div>
+    </header>
+    <div class="small-text-hint" hidden="" id="small-text-hint" role="status">
+     Tulisan sedang diperkecil. Pilih 100% pada pengaturan Tulisan untuk kembali ke ukuran normal.
+    </div>
+    <div class="content">
+     <p aria-live="polite" class="status-message" id="status" role="status">
+     </p>
+     <section aria-labelledby="heading-1" id="stage-1">
+      <div class="section-head">
+       <div>
+        <div class="eyebrow" style="margin-bottom:12px">
+         01 / Pilih matriks
+        </div>
+        <h1 id="heading-1">
+         Dari matriks, menjadi
+         <br/>
+         draft peraturan.
+        </h1>
+        <p class="muted">
+         Pilih matriks hasil harmonisasi, periksa bagian yang ditandai, lalu unduh draft Word.
+        </p>
+       </div>
+      </div>
+      <div class="upload-layout">
+       <div class="panel upload-card">
+        <h2>
+         Mulai dengan file matriks
+        </h2>
+        <div class="upload-box">
+         <span aria-hidden="true" class="doc-icon">
+          <svg fill="none" height="34" viewbox="0 0 27 34" width="27">
+           <path d="M2 1h15l8 8v23H2zM17 1v9h8M7 17h13M7 23h13" stroke="currentColor" stroke-width="2">
+           </path>
+          </svg>
+         </span>
+         <p>
+          Gunakan dokumen Word berformat
+          <strong>
+           .docx
+          </strong>
+         </p>
+         <button class="primary" id="pick">
+          Pilih File Matriks Word
+         </button>
+         <input accept=".docx" hidden="" id="file" type="file"/>
+         <div class="file-hint">
+          Dokumen asli tetap tersimpan tanpa perubahan.
+         </div>
+         <div class="file-picked" hidden="" id="picked" role="status">
+         </div>
+        </div>
+        <div class="privacy">
+         <svg aria-hidden="true" fill="none" height="24" viewbox="0 0 22 24" width="22">
+          <path d="M11 2 2 6v6c0 5 9 10 9 10s9-5 9-10V6zM6 11l3 3 7-7" stroke="currentColor" stroke-width="1.8">
+          </path>
+         </svg>
+         <span>
+          Siapkan matriks dengan kolom rumusan awal dan hasil penyempurnaan. Gunakan “Lihat Contoh” untuk mengenali susunannya.
+         </span>
+        </div>
+        <div class="demo-strip">
+         <div>
+          <strong>
+           Ingin melihat alurnya dahulu?
+          </strong>
+          <br/>
+          <span class="muted">
+           Lihat contoh matriks, hasil draft, dan cara memeriksa catatan.
+          </span>
+         </div>
+         <button id="example">
+          Lihat Contoh
+         </button>
+        </div>
+       </div>
+       <aside class="panel aside-card">
+        <h2>
+         Tiga langkah sederhana
+        </h2>
+        <ol class="how">
+         <li>
+          <span>
+           01
+          </span>
+          <div>
+           <strong>
+            Pilih matriks
+           </strong>
+           <small>
+            Pilih file hasil harmonisasi yang akan disusun menjadi draft.
+           </small>
+          </div>
+         </li>
+         <li>
+          <span>
+           02
+          </span>
+          <div>
+           <strong>
+            Periksa draft
+           </strong>
+           <small>
+            Catatan menunjukkan lokasi dan teks yang perlu diperhatikan.
+           </small>
+          </div>
+         </li>
+         <li>
+          <span>
+           03
+          </span>
+          <div>
+           <strong>
+            Unduh Word
+           </strong>
+           <small>
+            Simpan draft setelah semua catatan selesai diperiksa.
+           </small>
+          </div>
+         </li>
+        </ol>
+       </aside>
+      </div>
+      <div class="tip">
+       <strong>
+        Rumusan hasil diutamakan.
+       </strong>
+       Seluruh teks hitam dan merah pada kolom hasil digunakan. Jika kosong atau bertuliskan “Tetap”, rumusan awal digunakan sesuai bagian yang cocok.
+      </div>
+     </section>
+     <div hidden="" id="work">
+      <section aria-labelledby="heading-2" id="stage-2">
+       <div class="section-head">
+        <div>
+         <div class="eyebrow" style="margin-bottom:12px">
+          02 / Periksa draft
+         </div>
+         <h1 id="heading-2">
+          Periksa bagian yang ditandai.
+         </h1>
+         <p class="muted">
+          Pilih lokasi untuk menuju teks. Arahkan penunjuk, klik, atau ketuk sorotan untuk membaca keterangannya.
+         </p>
+        </div>
+       </div>
+       <div class="panel file-bar">
+        <div>
+         <strong id="filename">
+         </strong>
+         <div class="stats" id="stats">
+         </div>
+        </div>
+        <div class="file-actions">
+         <button class="small" id="revise">
+          Pilih Matriks Revisi
+         </button>
+         <button class="small" id="reset">
+          Mulai Dokumen Baru
+         </button>
+        </div>
+       </div>
+       <div class="review-grid">
+        <section>
+         <div class="notes-head">
+          <h2>
+           Catatan pemeriksaan
+          </h2>
+          <span class="count" id="count">
+           0
+          </span>
+         </div>
+         <div id="issues">
+         </div>
+         <details class="decision-log">
+          <summary>
+           Keputusan penyusunan
+          </summary>
+          <div id="decisions">
+          </div>
+         </details>
+        </section>
+        <section class="panel viewer">
+         <div class="viewer-toolbar">
+          <div>
+           <h3>
+            Pratinjau draft
+           </h3>
+           <p class="muted" id="preview-info" style="font-size:14px">
+            Menyiapkan halaman…
+           </p>
+          </div>
+          <label class="scale-control">
+           Zoom draft
+           <select aria-label="Zoom pratinjau draft" id="zoom">
+            <option value="25">
+             25%
+            </option>
+            <option value="50">
+             50%
+            </option>
+            <option value="75">
+             75%
+            </option>
+            <option selected="" value="100">
+             100%
+            </option>
+            <option value="125">
+             125%
+            </option>
+            <option value="150">
+             150%
+            </option>
+            <option value="175">
+             175%
+            </option>
+            <option value="200">
+             200%
+            </option>
+           </select>
+          </label>
+         </div>
+         <p class="zoom-hint">
+          Zoom hanya mengubah tampilan. Pratinjau memakai berkas yang sama dengan unduhan; pemenggalan halaman di Word dapat berbeda karena font dan mesin tampilan.
+         </p>
+         <p class="viewer-hint" id="viewer-status" role="status">
+          Pilih catatan untuk menyorot bagian terkait.
+         </p>
+         <div class="document-host" id="document">
+          <iframe id="draft-frame" src="viewer.html" title="Pratinjau seluruh halaman draft Word">
+          </iframe>
+         </div>
+        </section>
+       </div>
+       <div class="review-footer">
+        <p class="muted" id="ready">
+        </p>
+        <button class="primary" disabled="" id="to-download">
+         Lanjut ke Unduhan
+        </button>
+       </div>
+      </section>
+      <section aria-labelledby="heading-3" hidden="" id="stage-3">
+       <div class="download-layout">
+        <div class="section-head">
+         <div>
+          <div class="eyebrow" style="margin-bottom:12px">
+           03 / Unduh Word
+          </div>
+          <h1 id="heading-3">
+           Simpan hasil penyusunan.
+          </h1>
+          <p class="muted">
+           Periksa ringkasan keputusan sebelum menyimpan draft.
+          </p>
+         </div>
+        </div>
+        <div class="panel ready">
+         <div class="ready-top">
+          <span aria-hidden="true" class="check">
+           ✓
+          </span>
+          <div>
+           <h2>
+            Draft siap disimpan
+           </h2>
+           <p class="muted" id="download-filename">
+           </p>
+          </div>
+         </div>
+         <div class="summary" id="download-summary">
+         </div>
+         <p class="notice">
+          Lengkapi data yang belum tersedia dan periksa hasil akhir sebelum digunakan.
+         </p>
+         <button class="primary" disabled="" id="download">
+          Unduh Draft Word
+         </button>
+         <div id="download-links">
+         </div>
+         <div class="secondaries">
+          <button id="report">
+           Unduh Catatan Pemeriksaan
+          </button>
+          <button id="back-review">
+           Kembali ke Pemeriksaan
+          </button>
+          <button id="new-doc">
+           Mulai Dokumen Baru
+          </button>
+         </div>
+        </div>
+       </div>
+      </section>
+     </div>
+    </div>
+    <footer class="footer">
+     <span>
+      KOMAD · Ruang kerja perancang
+     </span>
+     <span>
+      Versi 1.0.0
+     </span>
+    </footer>
+   </main>
+  </div>
+  <dialog aria-labelledby="guide-title" id="guide">
+   <div class="dialog-heading">
+    <div class="eyebrow">
+     BANTUAN PENGGUNA
+    </div>
+    <h2 id="guide-title">
+     Cara menggunakan KOMAD
+    </h2>
+    <p class="muted">
+     Ikuti urutan berikut untuk menyusun dan memeriksa draft.
+    </p>
+   </div>
+   <ol class="guide-steps">
+    <li>
+     <h3>
+      Siapkan matriks Word
+     </h3>
+     <p>
+      Gunakan file
+      <strong>
+       .docx
+      </strong>
+      dengan kolom rumusan awal dan hasil penyempurnaan. Kolom keterangan dapat berisi petunjuk yang perlu diperhatikan.
+     </p>
+     <button class="small" id="guide-example">
+      Lihat Contoh Matriks
+     </button>
+    </li>
+    <li>
+     <h3>
+      Pilih file matriks
+     </h3>
+     <p>
+      Klik
+      <strong>
+       Pilih File Matriks Word
+      </strong>
+      , lalu pilih dokumen dari perangkat. File asli tidak diubah.
+     </p>
+    </li>
+    <li>
+     <h3>
+      Periksa draft dan catatan
+     </h3>
+     <p>
+      Klik
+      <strong>
+       Lihat bagian
+      </strong>
+      pada catatan untuk menuju teks yang disorot. Arahkan penunjuk, klik, atau ketuk teks berwarna untuk membaca keterangannya.
+     </p>
+     <p>
+      Untuk typo yang jelas, pilih
+      <strong>
+       Terapkan rekomendasi
+      </strong>
+      atau
+      <strong>
+       Biarkan sesuai matriks
+      </strong>
+      . Jika urutan pasal, penomoran, atau isi belum pasti, perbaiki matriks lalu pilih
+      <strong>
+       Pilih Matriks Revisi
+      </strong>
+      .
+     </p>
+    </li>
+    <li>
+     <h3>
+      Simpan dan periksa hasil akhir
+     </h3>
+     <p>
+      Setelah semua catatan ditangani, lanjutkan ke unduhan Word. Lengkapi nomor, tanggal, nama, atau lampiran yang belum tersedia sesuai keputusan perancang.
+     </p>
+    </li>
+   </ol>
+   <section class="help-box">
+    <h3>
+     Pengaturan ukuran
+    </h3>
+    <p>
+     <strong>
+      Tulisan
+     </strong>
+     mengatur ukuran teks antarmuka.
+     <strong>
+      Zoom draft
+     </strong>
+     memperbesar atau memperkecil seluruh halaman pratinjau. Keduanya tidak mengubah format dokumen Word.
+    </p>
+   </section>
+   <div class="dialog-footer">
+    <button class="primary close">
+     Tutup Panduan
+    </button>
+   </div>
+  </dialog>
+  <dialog aria-labelledby="example-title" id="example-dialog">
+   <div class="dialog-heading">
+    <div class="eyebrow">
+     CONTOH UNTUK BELAJAR
+    </div>
+    <h2 id="example-title">
+     Dari matriks menjadi draft
+    </h2>
+    <p class="muted">
+     Isi berikut hanya ilustrasi untuk memahami cara pembacaan matriks.
+    </p>
+   </div>
+   <h3>
+    1. Contoh matriks
+   </h3>
+   <div aria-label="Contoh tabel matriks, dapat digulir ke samping" class="table-scroll" tabindex="0">
+    <table class="example-table">
+     <thead>
+      <tr>
+       <th>
+        Materi
+       </th>
+       <th>
+        Rumusan awal
+       </th>
+       <th>
+        Hasil penyempurnaan
+       </th>
+       <th>
+        Keterangan
+       </th>
+      </tr>
+     </thead>
+     <tbody>
+      <tr>
+       <th>
+        Pasal 1
+       </th>
+       <td>
+        Pendataan dilakukan setiap 6 (enam) bulan.
+       </td>
+       <td>
+        Pendataan dilakukan setiap
+        <span class="red-example">
+         3 (tiga)
+        </span>
+        bulan.
+       </td>
+       <td>
+        Jangka waktu disesuaikan.
+       </td>
+      </tr>
+      <tr>
+       <th>
+        Pasal 2
+       </th>
+       <td>
+        Pelaporan disampaikan secara tertulis.
+       </td>
+       <td>
+        <em>
+         Kosong
+        </em>
+       </td>
+       <td>
+        Tidak ada perubahan.
+       </td>
+      </tr>
+      <tr>
+       <th>
+        Pasal 3
+       </th>
+       <td>
+        Evaluasi dilaksanakan setiap tahun.
+       </td>
+       <td>
+        Tetap
+       </td>
+       <td>
+        Rumusan awal dipertahankan.
+       </td>
+      </tr>
+     </tbody>
+    </table>
+   </div>
+   <p class="example-explanation">
+    <strong>
+     Cara membacanya:
+    </strong>
+    kolom hasil yang berisi rumusan digunakan seluruhnya, termasuk teks hitam dan merah. Jika kosong atau bertuliskan “Tetap”, rumusan awal digunakan pada bagian yang cocok.
+   </p>
+   <h3>
+    2. Contoh hasil draft
+   </h3>
+   <div class="sample-draft">
+    <h4>
+     Pasal 1
+    </h4>
+    <p>
+     Pendataan dilakukan setiap 3 (tiga) bulan.
+    </p>
+    <h4>
+     Pasal 2
+    </h4>
+    <p>
+     Pelaporan disampaikan secara tertulis.
+    </p>
+    <h4>
+     Pasal 3
+    </h4>
+    <p>
+     Evaluasi dilaksanakan setiap tahun.
+    </p>
+   </div>
+   <section class="help-box">
+    <h3>
+     3. Coba catatan dan sorotan teks
+    </h3>
+    <p>
+     Gunakan contoh sederhana ini untuk mencoba pembacaan kolom hasil, “Tetap”, catatan, dan unduhan Word. Matriks contoh juga dapat Anda unduh.
+    </p>
+    <button class="primary" id="try-example">
+     Gunakan Matriks Contoh
+    </button>
+    <a class="example-download" download="Contoh_Matriks_KOMAD.docx" href="assets/Contoh_Matriks_KOMAD.docx">
+     Unduh Contoh Matriks Word
+    </a>
+   </section>
+   <div class="dialog-footer">
+    <button class="close">
+     Tutup Contoh
+    </button>
+   </div>
+  </dialog>
+  <dialog aria-labelledby="offline-title" id="offline">
+   <div class="dialog-heading">
+    <div class="eyebrow">
+     AKSES DARI PERANGKAT
+    </div>
+    <h2 id="offline-title">
+     Menggunakan KOMAD tanpa internet
+    </h2>
+    <p class="muted">
+     Internet diperlukan untuk pemasangan pertama dan mengambil pembaruan aplikasi.
+    </p>
+   </div>
+   <ol class="guide-steps">
+    <li>
+     <h3>
+      Siapkan saat terhubung internet
+     </h3>
+     <p id="install-browser-steps">
+      Buka alamat resmi KOMAD. Pilih
+      <strong>
+       Pasang aplikasi
+      </strong>
+      jika tersedia, lalu ikuti petunjuk browser. Nama menu pemasangan dapat berbeda antarperangkat.
+     </p>
+    </li>
+    <li>
+     <h3>
+      Pastikan aplikasi siap offline
+     </h3>
+     <p>
+      Tunggu hingga status menunjukkan
+      <strong>
+       Siap digunakan offline
+      </strong>
+      . Ikon yang sudah muncul belum selalu berarti seluruh berkas aplikasi selesai tersimpan.
+     </p>
+    </li>
+    <li>
+     <h3>
+      Buka melalui ikon KOMAD
+     </h3>
+     <p>
+      Saat tidak terhubung internet, buka ikon KOMAD di desktop atau layar utama. Pilih matriks yang tersimpan di perangkat, periksa draft, lalu simpan hasilnya.
+     </p>
+    </li>
+    <li>
+     <h3>
+      Ambil pembaruan saat online
+     </h3>
+     <p>
+      Selesaikan pekerjaan dan simpan draft terlebih dahulu. Sambungkan internet, buka aplikasi, lalu ikuti pemberitahuan pembaruan. Periksa nomor versi dan status kesiapan offline setelah selesai.
+     </p>
+    </li>
+   </ol>
+   <section class="help-box">
+    <h3>
+     Jika aplikasi tidak terbuka saat offline
+    </h3>
+    <p>
+     Sambungkan kembali internet dan periksa kesiapan offline. Jika data situs atau cache browser terhapus, persiapan offline perlu diulang. Simpan juga matriks dan draft di folder perangkat yang mudah ditemukan.
+    </p>
+   </section>
+   <div class="dialog-footer">
+    <button class="primary close" id="close-install-help">
+     Tutup Petunjuk Offline
+    </button>
+   </div>
+  </dialog>
+  <div class="toast" hidden="" id="toast" role="status">
+  </div>
+ </body>
+</html>
