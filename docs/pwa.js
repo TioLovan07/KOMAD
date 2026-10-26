@@ -26,7 +26,7 @@
     function diagnostic(code, errorName = '') {
         const box = document.getElementById('offline-diagnostics');
         box.hidden = false;
-        document.getElementById('offline-diagnostic-text').value = ['KOMAD 1.0.0', 'Kode: ' + code, 'Browser: ' + ((navigator.userAgent.match(/Edg\/[\d.]+|Firefox\/[\d.]+|Chrome\/[\d.]+|Version\/[\d.]+/) || ['tidak dikenali'])[0]), 'HTTPS: ' + (location.protocol === 'https:' ? 'ya' : 'tidak'), 'Konteks aman: ' + (window.isSecureContext ? 'ya' : 'tidak'), 'API offline: ' + ('serviceWorker' in navigator ? 'tersedia' : 'tidak tersedia'), 'Di dalam bingkai: ' + (window.self !== window.top ? 'ya' : 'tidak'), 'Jendela aplikasi: ' + (standalone() ? 'ya' : 'tidak'), errorName ? 'Keterangan: ' + errorName : '', lastPreparationFailure ? 'Komponen gagal: ' + lastPreparationFailure : ''].filter(Boolean).join('\n');
+        document.getElementById('offline-diagnostic-text').value = ['KOMAD 1.0.1', 'Kode: ' + code, 'Browser: ' + ((navigator.userAgent.match(/Edg\/[\d.]+|Firefox\/[\d.]+|Chrome\/[\d.]+|Version\/[\d.]+/) || ['tidak dikenali'])[0]), 'HTTPS: ' + (location.protocol === 'https:' ? 'ya' : 'tidak'), 'Konteks aman: ' + (window.isSecureContext ? 'ya' : 'tidak'), 'API offline: ' + ('serviceWorker' in navigator ? 'tersedia' : 'tidak tersedia'), 'Di dalam bingkai: ' + (window.self !== window.top ? 'ya' : 'tidak'), 'Jendela aplikasi: ' + (standalone() ? 'ya' : 'tidak'), errorName ? 'Keterangan: ' + errorName : '', lastPreparationFailure ? 'Komponen gagal: ' + lastPreparationFailure : ''].filter(Boolean).join('\n');
     }
 
     function state(text, description, kind) {
@@ -157,7 +157,7 @@
             cacheVersion = info.version || '';
             if (ready) {
                 networkState();
-                document.getElementById('app-version').textContent = 'Versi 1.0.0';
+                document.getElementById('app-version').textContent = 'Versi 1.0.1';
             } else {
                 state('Belum siap offline', 'Sebagian komponen belum tersimpan. Sambungkan internet, lalu tekan Periksa pembaruan.', 'error');
                 diagnostic('CACHE_INCOMPLETE');

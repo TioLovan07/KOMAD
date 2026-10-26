@@ -40,7 +40,9 @@ function rowLocations(row, predicate = () => true, options = {}) {
 export function attachIssueLocations(documentModel) {
     for (const issue of documentModel.issues) {
         let locations = [];
-        if (issue.kind === 'correction') {
+        if (issue.kind === 'editorial') {
+            locations = [makeLocation(issue.row, issue.blockIndex)];
+        } else if (issue.kind === 'correction') {
             for (const row of documentModel.rows) {
                 locations.push(...rowLocations(row, block => block.text.includes(issue.word), {
                     word: issue.word
@@ -119,6 +121,12 @@ export function attachIssueLocations(documentModel) {
                 context: issue.message,
                 sourceOnly: true
             });
+        }
+        for (const location of locations) {
+            if (documentModel.issues.some(note => note.kind === 'editorial' && note.choice === 'remove' &&
+                    note.row.index === location.rowIndex && note.blockIndex === location.blockIndex)) {
+                location.sourceOnly = true;
+            }
         }
         issue.locations = locations;
     }

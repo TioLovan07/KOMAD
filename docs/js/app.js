@@ -79,7 +79,8 @@ function renderDownloadSummary() {
         ['Status pemeriksaan', pending().length ? pending().length + ' catatan belum ditangani' : 'Seluruh catatan ditangani'],
         ['Koreksi ejaan diterapkan', correctionCount + ' rekomendasi'],
         ['Tempat isian', remainingData ? 'Masih perlu dilengkapi sesuai sumber' : 'Tidak ada penanda kosong terdeteksi'],
-        ['Format dokumen', 'Bookman Old Style 12 pt · F4 · margin utama 2 cm'],
+        ['Format dokumen', 'Bookman Old Style 12 pt · F4 potret · margin utama 2 cm'],
+        ['Lampiran', 'Halaman potret di akhir; periksa judul dan lengkapi isi yang belum tersedia'],
     ];
     $('download-summary').replaceChildren(...entries.map(([label, value]) => {
         const row = el('div', undefined, 'summary-row');

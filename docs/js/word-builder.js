@@ -30,6 +30,13 @@ import {
 import {
     DRAFT_FORMAT
 } from './format-profile.js';
+import {
+    startsJointApproval,
+    isDecision,
+    documentMetadata,
+    annexHeadingLines,
+    isSourceAnnexHeading
+} from './document-layout.js';
 
 function fromProfile(doc, obj) {
     const e = we(doc, obj.tag, obj.attrs);
@@ -118,7 +125,18 @@ async function buildWord({
     allowPending = false
 } = {}) {
     if (!allowPending && pending().length) throw Error('Tentukan pilihan untuk semua catatan terlebih dahulu.');
-    const rows = effectiveRows(),
+    const selectedRows = effectiveRows();
+    const isAnnex = row => row.label.toLowerCase() === 'lampiran';
+    // Lampiran selalu berada sesudah pengundangan, walau baris matriks berbeda urutan.
+    const annexRows = selectedRows.filter(isAnnex);
+    const rows = [...selectedRows.filter(row => !isAnnex(row)), ...annexRows];
+    if (!annexRows.length) rows.push({
+        index: 'annex',
+        label: 'Lampiran',
+        ps: []
+    });
+    const metadata = documentMetadata(selectedRows);
+    const
         d = parse(xml(model.doc)),
         body = nodes(d, 'body')[0];
     body.replaceChildren();
@@ -183,7 +201,44 @@ async function buildWord({
         annexStarted = false,
         inAyat = false,
         sectionTitleNext = false,
+        jointApproval = false,
         annexHeading = true;
+
+    // Potret F4 mengikuti halaman utama; lebar tabel dihitung dari margin aktual.
+    const portraitSection = () => fromProfile(d, DRAFT_FORMAT.sections[0]);
+    const annexPage = portraitSection();
+    const pageWidth = Number(val(direct(annexPage, 'pgSz')[0], 'w'));
+    const margins = direct(annexPage, 'pgMar')[0];
+    const annexWidth = pageWidth - Number(val(margins, 'left')) - Number(val(margins, 'right'));
+
+    function startAnnex() {
+        annexStarted = true;
+        inTop = false;
+        signatureStage = '';
+        jointApproval = false;
+        annexHeading = true;
+        const section = portraitSection();
+        property(section, 'type', {
+            val: 'nextPage'
+        });
+        const boundary = we(d, 'p'),
+            pr = we(d, 'pPr');
+        pr.appendChild(section);
+        boundary.appendChild(pr);
+        body.appendChild(boundary);
+        const oldAnchor = anchorContext;
+        anchorContext = '';
+        for (const line of annexHeadingLines(metadata)) {
+            const p = addParagraph(makePara(line).node, 'annexHeader', {
+                before: 0,
+                removeNum: true
+            });
+            property(direct(p, 'pPr')[0], 'keepLines', {
+                val: 1
+            });
+        }
+        anchorContext = oldAnchor;
+    }
 
     function layoutTable(widths, indent = 0) {
         const table = we(d, 'tbl'),
@@ -323,7 +378,7 @@ async function buildWord({
             columns = grid ? direct(grid, 'gridCol') : [],
             widths = columns.map(c => Number(val(c, 'w')) || 1),
             total = widths.reduce((a, b) => a + b, 0),
-            available = annexStarted ? 21540 : 7371,
+            available = annexStarted ? annexWidth : 7371,
             scale = total ? (annexStarted ? available / total : Math.min(1, available / total)) : 1;
         if (total) {
             columns.forEach((c, i) => c.setAttributeNS(W, 'w:w', Math.round(widths[i] * scale)));
@@ -374,12 +429,19 @@ async function buildWord({
     }
     for (const row of rows) {
         let group = null,
-            groupIndex = 0;
+            groupIndex = 0,
+            groupClosed = false;
+        const flushGroup = () => {
+            if (group) expected.push(blockText(group));
+            group = null;
+            groupClosed = true;
+        };
+        if (isAnnex(row) && !annexStarted) startAnnex();
         const groupWidths = row.prefix === 'Menetapkan' ? [2268, 284, 7371] : [2268, 284, 567, 6804];
         if (row.prefix) inTop = false;
         for (let blockIndex = 0; blockIndex < row.ps.length; blockIndex++) {
             const item = row.ps[blockIndex];
-            anchorContext = 'p3h_' + row.index + '_' + blockIndex;
+            anchorContext = 'p3h_' + row.index + '_' + (item.sourceBlockIndex ?? blockIndex);
             anchorCount = 0;
             const t = norm(item.text),
                 isDrawing = nodes(item.node, 'drawing').length > 0;
@@ -387,16 +449,17 @@ async function buildWord({
                 extra = {
                     removeNum: true
                 };
-            if (row.label.toLowerCase() === 'lampiran' && !annexStarted) {
-                annexStarted = true;
+            if (annexStarted && annexHeading && item.node.localName !== 'tbl' &&
+                isSourceAnnexHeading(t, metadata)) continue;
+            if (startsJointApproval(t)) {
+                flushGroup();
+                jointApproval = true;
                 inTop = false;
-                signatureStage = '';
-                annexHeading = true;
-                const pp = we(d, 'p'),
-                    pr = we(d, 'pPr');
-                pr.appendChild(fromProfile(d, DRAFT_FORMAT.sections[0]));
-                pp.appendChild(pr);
-                body.appendChild(pp);
+            }
+            if (isDecision(t)) {
+                if (group) flushGroup();
+                jointApproval = false;
+                if (row.prefix === 'Menetapkan') groupClosed = false;
             }
             if (item.node.localName === 'tbl') {
                 const trs = direct(item.node, 'tr');
@@ -436,7 +499,7 @@ async function buildWord({
                 previous = t;
                 continue;
             }
-            if (row.prefix && !/^MEMUTUSKAN\s*:$/i.test(t)) {
+            if (row.prefix && !groupClosed && !jointApproval && !isDecision(t)) {
                 if (!group) {
                     group = layoutTable(groupWidths);
                     body.appendChild(group);
@@ -473,7 +536,10 @@ async function buildWord({
                 previous = t;
                 continue;
             }
-            if (/^MEMUTUSKAN\s*:$/i.test(t)) {
+            if (jointApproval) {
+                role = 'approval';
+                extra.before = startsJointApproval(t) ? 240 : 0;
+            } else if (/^MEMUTUSKAN\s*:$/i.test(t)) {
                 inTop = false;
                 role = 'decide';
             } else if (/^BAB\s+[IVXLCDM]+$/i.test(t)) {
@@ -525,8 +591,9 @@ async function buildWord({
                 role = 'top';
                 extra.before = 240;
             } else if (annexStarted && annexHeading) {
-                role = 'annex';
-                extra.before = 0;
+                annexHeading = false;
+                role = 'top';
+                extra.before = 240;
             } else if (inTop) {
                 role = 'top';
                 if (/^RANCANGAN$/.test(t)) extra.before = 240;
@@ -540,6 +607,12 @@ async function buildWord({
                 role = 'signature';
                 extra.before = 960;
             } else if (role === 'signature' && /^pada tanggal/i.test(t)) extra.before = 0;
+            // Perataan tengah eksplisit pada rumusan umum tidak dibuang bersama pPr matriks.
+            const sourcePr = direct(item.node, 'pPr')[0];
+            if (role === 'body' && sourcePr && val(direct(sourcePr, 'jc')[0]) === 'center') {
+                extra.flat = true;
+                extra.align = 'center';
+            }
             let source = item.node;
             if (item.list && !inTop && !annexStarted && !signatureStage && !['article', 'chapter', 'chapterTitle'].includes(role)) {
                 source = item.node.cloneNode(true);
@@ -567,7 +640,7 @@ async function buildWord({
         }
         if (group) expected.push(blockText(group));
     }
-    body.appendChild(fromProfile(d, DRAFT_FORMAT.sections[annexStarted ? 1 : 0]));
+    body.appendChild(portraitSection());
     const actual = Array.from(body.children).filter(n => ['p', 'tbl'].includes(n.localName) && !(n.localName === 'p' && !blockText(n) && !nodes(n, 'drawing').length)).map(blockText).join('\n');
     const contentKey = text => text.replace(/[ \t]+/g, ' ').replace(/(^|\n) +/g, '$1');
     if (contentKey(expected.join('\n')) !== contentKey(actual)) throw Error('Pemeriksaan isi tidak cocok. Unduhan dihentikan.');

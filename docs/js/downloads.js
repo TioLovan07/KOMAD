@@ -38,9 +38,9 @@ export function downloadWord() {
 
 export function downloadReport() {
     if (!model) return;
-    const lines = ['CATATAN PENYUSUNAN DRAFT', model.name, 'KOMAD 1.0.0', '', 'KEPUTUSAN PENYUSUNAN', ...model.decisions, '', 'PEMERIKSAAN'];
+    const lines = ['CATATAN PENYUSUNAN DRAFT', model.name, 'KOMAD 1.0.1', '', 'KEPUTUSAN PENYUSUNAN', ...model.decisions, '', 'PEMERIKSAAN'];
     for (const issue of model.issues) {
-        lines.push((!issue.resolved ? 'BELUM DIPERIKSA' : issue.choice === 'apply' ? 'REKOMENDASI DITERAPKAN' : issue.choice === 'keep' ? 'SESUAI MATRIKS' : 'SUDAH DIPERIKSA') + ' · ' + issue.title, issue.message);
+        lines.push((!issue.resolved ? 'BELUM DIPERIKSA' : issue.choice === 'remove' ? 'CATATAN DIKELUARKAN' : issue.choice === 'apply' ? 'REKOMENDASI DITERAPKAN' : issue.choice === 'keep' ? 'SESUAI MATRIKS' : 'SUDAH DIPERIKSA') + ' · ' + issue.title, issue.message);
         for (const location of issue.locations || []) lines.push(location.label + ' · ' + location.context);
         lines.push('');
     }

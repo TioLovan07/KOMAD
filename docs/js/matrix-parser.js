@@ -1,3 +1,7 @@
+import {
+    SPELLING_CORRECTIONS,
+    isEditorialInstruction
+} from './editorial-checks.js';
 /**
  * Membaca ZIP Word dan memilih rumusan sumber. Perubahan isi hanya melalui keputusan eksplisit pengguna.
  */
@@ -230,13 +234,19 @@ async function readMatrix(file) {
             title: 'Karakter sebelum jabatan penandatangan perlu diperiksa',
             message: 'Baris ' + row.index + ' memuat huruf B terpisah sebelum BUPATI. Karakter dari sumber dipertahankan; periksa matriks jika huruf tersebut tidak dimaksudkan.'
         });
+    for (const row of m.rows) {
+        row.ps.forEach((block, blockIndex) => {
+            if (isEditorialInstruction(block.text)) addIssue(m, {
+                kind: 'editorial',
+                row,
+                blockIndex,
+                title: 'Petunjuk penyunting berada dalam rumusan',
+                message: 'Kalimat ini tampak sebagai instruksi penyunting, bukan rumusan peraturan. Pilih apakah catatan dikeluarkan dari draft atau dipertahankan sesuai matriks. Program tidak menyusun penjelasan atau materi yang diminta secara otomatis.'
+            });
+        });
+    }
     const full = m.rows.map(r => plain(r.ps)).join('\n');
-    for (const [word, replacement] of [
-            ['Paraturan', 'Peraturan'],
-            ['Selanjuntnya', 'Selanjutnya'],
-            ['TK TK', 'TK'],
-            ['sebalah', 'sebelah']
-        ])
+    for (const [word, replacement] of SPELLING_CORRECTIONS)
         if (full.includes(word)) {
             const locations = [];
             for (const row of m.rows) {

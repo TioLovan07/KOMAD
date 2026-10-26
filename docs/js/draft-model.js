@@ -60,19 +60,22 @@ function replaceRuns(node, word, replacement) {
 function effectiveRows() {
     return model.rows.map(row => ({
         ...row,
-        ps: row.ps.map(p => {
+        ps: row.ps.map((p, sourceBlockIndex) => {
             const node = p.node.cloneNode(true);
             for (const issue of model.issues)
                 if (issue.kind === 'correction' && issue.choice === 'apply') replaceRuns(node, issue.word, issue.replacement);
             return {
                 ...p,
+                sourceBlockIndex,
                 list: p.list ? {
                     ...p.list
                 } : null,
                 node,
                 text: blockText(node)
             };
-        })
+        }).filter(block => !model.issues.some(issue => issue.kind === 'editorial' &&
+            issue.choice === 'remove' && issue.row === row &&
+            issue.blockIndex === block.sourceBlockIndex))
     }));
 }
 

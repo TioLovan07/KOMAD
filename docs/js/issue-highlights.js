@@ -20,7 +20,7 @@ export function highlightIssue(issue, scroll = false, locationIndex = null) {
     const locations = locationIndex === null ? issue.locations : [issue.locations[locationIndex]];
     for (const location of locations || []) {
         if (location.sourceOnly) continue;
-        const source = rows.find(row => row.index === location.rowIndex)?.ps[location.blockIndex]?.text;
+        const source = rows.find(row => row.index === location.rowIndex)?.ps.find(block => block.sourceBlockIndex === location.blockIndex)?.text;
         if (!source) continue;
         let needle = location.word;
         if (issue.kind === 'correction' && issue.choice === 'apply') needle = issue.replacement;

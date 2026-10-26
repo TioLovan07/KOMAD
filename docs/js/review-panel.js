@@ -35,7 +35,7 @@ export function renderReview(onChange) {
     for (const issue of model.issues) {
         const card = el('article', undefined, 'panel note' + (issue.resolved ? ' done' : ''));
         card.id = 'issue-' + issue.id;
-        const status = issue.resolved ? (issue.choice === 'apply' ? 'REKOMENDASI DITERAPKAN' : issue.choice === 'keep' ? 'SESUAI MATRIKS' : 'SUDAH DIPERIKSA') : issue.hard ? 'PERBAIKI MATRIKS' : 'PERLU DIPERIKSA';
+        const status = issue.resolved ? (issue.choice === 'remove' ? 'CATATAN DIKELUARKAN' : issue.choice === 'apply' ? 'REKOMENDASI DITERAPKAN' : issue.choice === 'keep' ? 'SESUAI MATRIKS' : 'SUDAH DIPERIKSA') : issue.hard ? 'PERBAIKI MATRIKS' : 'PERLU DIPERIKSA';
         card.append(el('div', status, 'status'), el('h3', issue.title), el('p', issue.message));
         const list = el('div', undefined, 'location-list');
         issue.locations.forEach((location, index) => {
@@ -57,6 +57,9 @@ export function renderReview(onChange) {
             apply.setAttribute('aria-pressed', String(issue.choice === 'apply'));
             keep.setAttribute('aria-pressed', String(issue.choice === 'keep'));
             card.append(apply, keep);
+        } else if (issue.kind === 'editorial') {
+            card.append(action('Keluarkan Catatan dari Draft', () => resolve('remove')),
+                action('Biarkan Sesuai Matriks', () => resolve('keep'), 'text small'));
         } else if (issue.hard) {
             card.append(action('Pilih Matriks Revisi', () => $('file').click()));
         } else if (!issue.resolved && issue.kind === 'annex') {
@@ -79,6 +82,9 @@ export function renderReview(onChange) {
     if (!model.issues.length) $('issues').append(el('p', 'Tidak ada pengecualian yang terdeteksi. Tetap periksa seluruh draft sebelum digunakan.', 'panel issue-empty'));
     $('decisions').replaceChildren(...[
         ...model.decisions,
+        ...model.issues.filter(issue => issue.kind === 'editorial' && issue.choice).map(issue =>
+            (issue.choice === 'remove' ? 'Catatan dikeluarkan dari draft: ' : 'Catatan dipertahankan: ') +
+            issue.row.ps[issue.blockIndex].text),
         ...model.issues.filter(issue => issue.kind === 'correction' && issue.choice).map(issue => issue.choice === 'apply' ? 'Diterapkan: “' + issue.word + '” menjadi “' + issue.replacement + '”.' : 'Dipertahankan: “' + issue.word + '” sesuai matriks.'),
     ].map(text => el('p', text)));
 }

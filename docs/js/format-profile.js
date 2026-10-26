@@ -1029,43 +1029,6 @@ export const DRAFT_FORMAT = {
             },
             "children": []
         }]
-    }, {
-        "tag": "sectPr",
-        "attrs": {},
-        "children": [{
-            "tag": "pgSz",
-            "attrs": {
-                "w": "23808",
-                "h": "16840",
-                "orient": "landscape",
-                "code": "8"
-            },
-            "children": []
-        }, {
-            "tag": "pgMar",
-            "attrs": {
-                "top": "1134",
-                "right": "1134",
-                "bottom": "720",
-                "left": "1134",
-                "header": "720",
-                "footer": "720",
-                "gutter": "0"
-            },
-            "children": []
-        }, {
-            "tag": "cols",
-            "attrs": {
-                "space": "720"
-            },
-            "children": []
-        }, {
-            "tag": "docGrid",
-            "attrs": {
-                "linePitch": "360"
-            },
-            "children": []
-        }]
     }],
     "before": {
         "top": 0,
@@ -1095,3 +1058,57 @@ export const DRAFT_FORMAT = {
         "cy": 1257300
     }
 };
+
+// Persetujuan bersama memakai lebar penuh, tidak mengikuti indent isi pasal.
+DRAFT_FORMAT.roles.approval = {
+    tag: 'pPr',
+    attrs: {},
+    children: [{
+        tag: 'jc',
+        attrs: {
+            val: 'center'
+        },
+        children: []
+    }, {
+        tag: 'ind',
+        attrs: {
+            left: '0',
+            right: '0',
+            firstLine: '0'
+        },
+        children: []
+    }, {
+        tag: 'keepNext',
+        attrs: {
+            val: '1'
+        },
+        children: []
+    }, ],
+};
+DRAFT_FORMAT.roles.annexHeader = {
+    tag: 'pPr',
+    attrs: {},
+    children: [{
+        tag: 'jc',
+        attrs: {
+            val: 'left'
+        },
+        children: []
+    }, {
+        tag: 'ind',
+        attrs: {
+            left: '4800',
+            right: '0',
+            firstLine: '0'
+        },
+        children: []
+    }, ],
+};
+// Jabatan dan nama pada akhir lampiran menyesuaikan bidang tanda tangan potret.
+for (const child of DRAFT_FORMAT.roles.annex.children) {
+    if (child.tag === 'ind') child.attrs = {
+        left: '4800',
+        right: '0',
+        firstLine: '0'
+    };
+}
