@@ -1,7 +1,7 @@
 /** Offline Hunspell-compatible engine, isolated from the UI thread. */
 import nspell from '../vendor/nspell.js';
 let engine;
-const terms = 'bali komad ranperbup ranperda perkada perda perbup pemda pemkab pemprov kanwil kemenkum p3h corpu lms asn anev jdih buleleng gianyar singaraja denpasar badung bangli karangasem tabanan jembrana klungkung posbankum'.split(' ');
+const terms = 'nonalam suburusan pascabencana kedaruratan terencana kesiapsiagaan kesiapan berakhlak berkepribadian luhur monitoring kependudukan kependidikan berintegritas fisik-motorik bali komad ranperbup ranperda perkada perda perbup pemda pemkab pemprov kanwil kemenkum p3h corpu lms asn anev jdih buleleng gianyar singaraja denpasar badung bangli karangasem tabanan jembrana klungkung posbankum'.split(' ');
 async function initialize() {
     if (engine) return;
     const base = new URL('../assets/dictionary/', import.meta.url);

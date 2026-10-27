@@ -180,12 +180,16 @@ function matrixManualMarker(text) {
 
 function matrixParagraphs(cell, catalog, state) {
     const result = [];
+    let sourceArticle = '';
     for (const node of Array.from(cell.children).filter(n => ['p', 'tbl'].includes(n.localName))) {
-        if (/^\s*(Pasal\s+\d+|BAB\s+[IVXLCDM]+)\s*$/i.test(textOf(node))) state.clear();
+        if (/^\s*(Pasal\s+\d+|BAB\s+[IVXLCDM]+[A-Z]?)\s*$/i.test(textOf(node))) state.clear();
+        const rawTitle = norm(textOf(node)).match(/^Pasa[l]?\s+(\d+[A-Za-z]?)$/i);
+        if (rawTitle) sourceArticle = rawTitle[1];
         const native = node.localName === 'p' ? matrixNativeMarker(node, catalog, state) : null;
         const p = visiblePara(node);
         p.text = blockText(p.node);
         p.list = native || matrixManualMarker(p.text);
+        p.sourceArticle = sourceArticle;
         if (p.text.trim() || nodes(p.node, 'drawing').length || nodes(p.node, 'pict').length) result.push(p);
     }
     return result;
@@ -225,6 +229,21 @@ function matrixSelectRumusan(left, right, {
         useRight: false,
         rule: 'Kolom hasil bertuliskan Tetap; rumusan awal digunakan.'
     };
+    const titleRE = /^Pasal\s+(?:\d+[A-Za-z]?|[IVXLCDM]+)$/i;
+    const oldTitle = left.findIndex(p => /^Pasa[l]?\s+(?:\d+[A-Za-z]?|[IVXLCDM]+)$/i.test(norm(p.text)));
+    const newTitles = right.map((p,i) => titleRE.test(norm(p.text)) ? i : -1).filter(i=>i>=0);
+    const keeps = right.filter(matrixKeepText);
+    const sourceArticles=[...new Set(left.map(p=>p.sourceArticle).filter(Boolean))];
+    const preservedBody=oldTitle>=0 ? left.slice(oldTitle+1) :
+        sourceArticles.length===1 ? left.filter(p=>p.sourceArticle===sourceArticles[0]) : [];
+    if (preservedBody.length && newTitles.length === 1 && keeps.length === 1 &&
+        right.slice(newTitles[0]+1).every(matrixKeepText)) {
+        return {
+            ps: [...right.slice(0,newTitles[0]+1).map(matrixCloneBlock), ...preservedBody.map(matrixCloneBlock)],
+            useRight: true,
+            rule: 'Tetap untuk isi pasal: judul/nomor hasil digunakan; seluruh isi pasal awal dipertahankan.'
+        };
+    }
     // A numbered fragment is not a complete replacement of a chapter/article.
     const articleHead = p => /^Pasal\s+\d+[A-Za-z]?$/i.test(norm(p.text));
     const lostArticle = left.some(articleHead) && !right.some(articleHead);

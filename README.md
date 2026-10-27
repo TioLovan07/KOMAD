@@ -1,6 +1,6 @@
 # KOMAD — Konversi Matriks Menjadi Draft
 
-Versi 1.2.0. Aplikasi untuk menyusun draft Word dari matriks hasil harmonisasi, memeriksa catatan beserta lokasi teksnya, lalu mengunduh hasil `.docx`.
+Versi 1.3.0. Aplikasi untuk menyusun draft Word dari matriks hasil harmonisasi, memeriksa catatan beserta lokasi teksnya, lalu mengunduh hasil `.docx`.
 
 **Mulai dari [PANDUAN_GITHUB.md](PANDUAN_GITHUB.md)** untuk menayangkan aplikasi. Seluruh situs siap unggah berada di folder `docs/`; tidak perlu memasang dependensi atau menjalankan proses build untuk unggahan pertama paket ini.
 
@@ -105,8 +105,12 @@ Dokumen kantor untuk pengujian tidak disertakan dalam paket/repository. Lihat li
 ## Pemeriksaan ejaan 1.1.0
 Kamus Hunspell Indonesia (46.905 entri, LGPL-3.0-only) dan nspell 2.1.5 (MIT) disertakan lokal. Lihat docs/assets/dictionary/NOTICE.txt. Istilah tidak dikenali adalah saran pemeriksaan, bukan bukti typo. Saran dibatasi kandidat satu edit, maksimal lima. Nama/singkatan/istilah tetap perlu ditinjau. Tidak menilai substansi hukum.
 
-Versi 1.2.0 menyaring peringatan: kata belum dikenali masuk daftar opsional; hanya pola typo konservatif menjadi catatan utama. Lihat PEMBARUAN-1.1.1.md.
+Versi 1.3.0 menyaring peringatan: kata belum dikenali masuk daftar opsional; hanya pola typo konservatif menjadi catatan utama. Lihat PEMBARUAN-1.1.1.md.
 
 
 ## Rilis gabungan 1.2.0
 Lihat PEMBARUAN-1.2.0.md untuk format margin 8 cm seluruh halaman, pemeriksaan pasal lintas baris, validasi dan batas pengujian.
+
+
+## Rilis 1.3.0
+Lihat PEMBARUAN-1.3.0.md untuk aturan halaman pertama/lanjutan, penomoran perubahan, penanganan rumusan belum terpetakan, dan batas lampiran/.doc yang ditunda.

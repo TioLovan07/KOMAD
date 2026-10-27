@@ -1036,7 +1036,7 @@ export const DRAFT_FORMAT = {
         "consider": 0,
         "firstLegal": 240,
         "legal": 0,
-        "decide": 1440,
+        "decide": 240,
         "set": 240,
         "chapter": 480,
         "chapterTitle": 0,
@@ -1116,5 +1116,5 @@ for (const child of DRAFT_FORMAT.roles.annex.children) {
 // Approved office profile: F4 portrait 215 x 330 mm; margins apply to every section/page.
 for (const section of DRAFT_FORMAT.sections) {
     const margins = section.children.find(child => child.tag === 'pgMar');
-    Object.assign(margins.attrs, {top:'4535', bottom:'1417', left:'1417', right:'1417'});
+    Object.assign(margins.attrs, {top:'1417', bottom:'1417', left:'1417', right:'1417'});
 }

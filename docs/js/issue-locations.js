@@ -41,7 +41,13 @@ function rowLocations(row, predicate = () => true, options = {}) {
 export function attachIssueLocations(documentModel) {
     for (const issue of documentModel.issues) {
         let locations = [];
-        if (/^Revisi parsial digabungkan/.test(issue.title)) {
+        if (issue.kind === 'source-gap') {
+            locations = rowLocations(issue.row, block => /^Pasal\s/.test(norm(block.text)), {related:true});
+            for (const candidate of issue.candidates) locations.push({
+                rowIndex:issue.row.index, label:'Baris matriks '+issue.row.index+' · Rumusan awal belum terpetakan',
+                context:candidate.text, sourceOnly:issue.choice!=='apply'
+            });
+        } else if (/^Revisi parsial digabungkan/.test(issue.title)) {
             const row = documentModel.rows.find(row => row.index === issue.rowIndex);
             if (row) locations = rowLocations(row, block => row.right.some(p => norm(p.text) === norm(block.text)), {related:true});
         } else if (issue.kind === 'editorial') {

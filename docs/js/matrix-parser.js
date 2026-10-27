@@ -128,6 +128,42 @@ async function readMatrix(file) {
             });
         }
     }
+    let amendment = false, changeNumber = 0;
+    for (const row of m.rows) for (const p of row.ps) {
+        if (/^Pasal I$/i.test(norm(p.text))) amendment = true;
+        if (/^Pasal II$/i.test(norm(p.text))) amendment = false;
+        if (amendment && /^(?:\d+[.)]\s*)?(?:Ketentuan\s+(?:Pasal|huruf|Lampiran)|Di\s*antara\s+(?:BAB|Pasal))/i.test(norm(p.text))) {
+            const manual = p.list?.prefixLength || 0;
+            p.list = {...p.list, marker: (++changeNumber) + '.', kind:'number', level:0, prefixLength:manual};
+        }
+    }
+    // Identify incomplete replacements without silently filling legal substance.
+    const articleRE = /^Pasal\s+\d+[A-Za-z]?$/i;
+    const comparable = p => norm(p.text).replace(/^\(?\d+[.)]\s*/, '').replace(/\d+/g,'#').trim().toLowerCase();
+    for (const row of m.rows) {
+        if (!row.useRight || !row.left.length || !row.right.length) continue;
+        const oldTitles = row.left.map((p,i)=>articleRE.test(norm(p.text))?i:-1).filter(i=>i>=0);
+        const sourceArticles=[...new Set(row.left.map(p=>p.sourceArticle).filter(Boolean))];
+        if (oldTitles.length !== 1 && !(oldTitles.length===0 && sourceArticles.length===1)) continue;
+        const rightTitles = row.ps.map((p,i)=>articleRE.test(norm(p.text))?i:-1).filter(i=>i>=0);
+        if (!rightTitles.length) continue;
+        const oldBody = oldTitles.length ? row.left.slice(oldTitles[0]+1) : row.left.filter(p=>p.sourceArticle===sourceArticles[0]);
+        const last = rightTitles.at(-1);
+        if (last === row.ps.length-1 && oldBody.length) {
+            addIssue(m, {kind:'source-gap', row, insertAt:last+1, candidates:oldBody.map(matrixCloneBlock),
+                title:'Isi setelah '+norm(row.ps[last].text)+' belum tersedia',
+                message:'Kolom hasil berakhir pada judul pasal. Rumusan awal tersedia pada baris yang sama. Bandingkan lalu pilih apakah isi awal digunakan; aplikasi tidak menganggapnya dihapus.'});
+        } else if (rightTitles.length === 1 && oldBody.length>1) {
+            const newBody=row.ps.slice(last+1);
+            const firstOld=oldBody[0], firstNew=newBody[0];
+            if (firstNew && comparable(firstOld).slice(0,65)===comparable(firstNew).slice(0,65) && newBody.length<oldBody.length) {
+                const candidates=oldBody.slice(newBody.length).map(matrixCloneBlock);
+                addIssue(m, {kind:'source-gap', row, insertAt:row.ps.length, candidates,
+                    title:'Ada lanjutan rumusan awal yang belum terpetakan',
+                    message:'Awal rumusan cocok, tetapi kolom hasil memuat lebih sedikit paragraf. Periksa apakah lanjutan awal dipertahankan atau memang dikeluarkan.'});
+            }
+        }
+    }
     // A move is applied only when an explicit note and matching destination text agree.
     const moveRE = /(?:reposisi|pemindahan|pindah\w*|materi)\s+(?:ketentuan\s+)?Pasal\s+(\d+[A-Za-z]?)/ig;
     const moves = new Map();
@@ -256,7 +292,7 @@ async function readMatrix(file) {
         });
     }
     const full = m.rows.map(r => plain(r.ps)).join('\n');
-    for (const [word, replacement] of SPELLING_CORRECTIONS)
+    for (const [word, replacement] of new Map(SPELLING_CORRECTIONS))
         if (replacementMatches(full, word).length) {
             const locations = [];
             for (const row of m.rows) {

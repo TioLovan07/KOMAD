@@ -48,3 +48,29 @@ export async function checkSpelling(model) {
             message:error.message + ' Deteksi typo terbatas tetap berjalan. Jangan menganggap draft bebas kesalahan.'});
     } finally { worker?.terminate(); }
 }
+
+/** Recheck newly accepted source text; preserve earlier word decisions by identity. */
+export async function refreshSpelling(model) {
+    const [{SPELLING_CORRECTIONS},{replacementMatches}] = await Promise.all([
+        import('./editorial-checks.js'), import('./draft-model.js')
+    ]);
+    const prior=new Map(model.issues.filter(i=>i.kind==='correction').map(i=>[i.word,i]));
+    model.issues=model.issues.filter(i=>i.kind!=='correction');
+    const full=model.rows.flatMap(r=>r.ps.map(p=>p.text)).join('\n');
+    for(const [word,replacement] of new Map(SPELLING_CORRECTIONS))
+        if(replacementMatches(full,word).length) addIssue(model,{
+            kind:'correction',word,replacement,
+            title:'“'+word+'” → “'+replacement+'”',
+            message:'Periksa saran ejaan sebelum menerapkan pada kemunculan yang ditampilkan.'
+        });
+    await checkSpelling(model);
+    // IDs must be unique even after removing/rebuilding correction cards.
+    model.issues.forEach((issue,id)=>{
+        issue.id=id;
+        if(issue.kind==='correction' && prior.has(issue.word)) {
+            const old=prior.get(issue.word);
+            issue.choice=old.choice; issue.resolved=old.resolved;
+            if(!issue.suggestions || issue.suggestions.includes(old.replacement)) issue.replacement=old.replacement;
+        }
+    });
+}

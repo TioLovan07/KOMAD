@@ -106,18 +106,22 @@ function paintRange(p, start, end) {
         });
         offset += n.textContent.length;
     }
-    const a = parts.find(q => q.start <= start && q.end > start),
-        b = parts.find(q => q.start < end && q.end >= end);
-    if (!a || !b) return null;
-    const r = document.createRange();
-    r.setStart(a.node, start - a.start);
-    r.setEnd(b.node, end - b.start);
-    const mark = document.createElement('span');
-    mark.className = 'draft-highlight';
-    mark.appendChild(r.extractContents());
-    r.insertNode(mark);
-    return mark;
+    let first = null;
+    for (const part of parts.reverse()) {
+        const from = Math.max(start, part.start), to = Math.min(end, part.end);
+        if (from >= to) continue;
+        const range = document.createRange();
+        range.setStart(part.node, from - part.start);
+        range.setEnd(part.node, to - part.start);
+        const mark = document.createElement('span');
+        mark.className = 'draft-highlight';
+        mark.appendChild(range.extractContents());
+        range.insertNode(mark);
+        first = mark;
+    }
+    return first;
 }
+
 window.highlightDraft = function(targets, scroll) {
     window.clearDraftHighlights();
     let first = null;
@@ -165,10 +169,12 @@ window.highlightDraft = function(targets, scroll) {
             if (best) {
                 const mark = paintRange(best.p, best.start, best.end);
                 if (mark) {
+                    for (const mark of best.p.querySelectorAll('.draft-highlight')) {
                     mark.tabIndex = 0;
                     mark.dataset.note = target.tooltip || 'Bagian ini perlu diperiksa.';
                     mark.setAttribute('role', 'button');
                     mark.setAttribute('aria-label', mark.textContent + '. ' + mark.dataset.note);
+                    }
                 }
                 first = first || mark;
             }

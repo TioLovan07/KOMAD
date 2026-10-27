@@ -155,3 +155,14 @@ const ambiguous={issues:[],decisions:[]};
 ctx.matrixSelectRumusan(fullArticle,[p('Tidak ada penanda')],{m:ambiguous,rowIndex:10,prefix:''});
 assert.equal(ambiguous.issues[0].hard,true);
 console.log('PASS: partial revision preserves chapter, article, introduction and all 21 definitions; ambiguous fragment blocks export.');
+const renamed=ctx.matrixSelectRumusan(
+ [p('BAB V'),p('KETENTUAN PENUTUP'),p('Pasal 26'),p('Peraturan lama dicabut.')],
+ [p('BAB V'),p('KETENTUAN PENUTUP'),p('Pasal 29'),p('Tetap')],
+ {m:{issues:[],decisions:[]},rowIndex:35,prefix:''}
+);
+assert.deepEqual(Array.from(renamed.ps,p=>p.text),['BAB V','KETENTUAN PENUTUP','Pasal 29','Peraturan lama dicabut.']);
+const struckBody=p('Rumusan lama tetap digunakan.');
+struckBody.sourceArticle='26';
+const struck=ctx.matrixSelectRumusan([p('BAB V'),struckBody],[p('Pasal 29'),p('Tetap')],{m:{issues:[],decisions:[]},rowIndex:35,prefix:''});
+assert.equal(struck.ps.at(-1).text,'Rumusan lama tetap digunakan.');
+console.log('PASS: whole-article Tetap preserves body with a renamed or struck source title.');

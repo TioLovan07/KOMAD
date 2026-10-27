@@ -1,3 +1,4 @@
+import {configureFirstPage, positionGaruda} from './page-layout.js';
 /**
  * Pembentukan Word memakai profil contoh final. Pemeriksaan teks menghentikan ekspor jika isi tidak cocok.
  */
@@ -211,7 +212,7 @@ async function buildWord({
     const margins = direct(annexPage, 'pgMar')[0];
     const annexWidth = pageWidth - Number(val(margins, 'left')) - Number(val(margins, 'right'));
 
-    function startAnnex() {
+    function startAnnex(sourceHeading = false) {
         annexStarted = true;
         inTop = false;
         signatureStage = '';
@@ -228,7 +229,7 @@ async function buildWord({
         body.appendChild(boundary);
         const oldAnchor = anchorContext;
         anchorContext = '';
-        for (const line of annexHeadingLines(metadata)) {
+        for (const line of sourceHeading ? [] : annexHeadingLines(metadata)) {
             const p = addParagraph(makePara(line).node, 'annexHeader', {
                 before: 0,
                 removeNum: true
@@ -241,6 +242,8 @@ async function buildWord({
     }
 
     function layoutTable(widths, indent = 0) {
+        const excess = widths.reduce((a,b)=>a+b,0) + indent - annexWidth;
+        if (excess > 0) widths[widths.length-1] = Math.max(240,widths.at(-1)-excess);
         const table = we(d, 'tbl'),
             pr = we(d, 'tblPr'),
             width = widths.reduce((a, b) => a + b, 0);
@@ -436,7 +439,12 @@ async function buildWord({
             group = null;
             groupClosed = true;
         };
-        if (isAnnex(row) && !annexStarted) startAnnex();
+        if (isAnnex(row) && !annexStarted) {
+            row.sourceAnnexHeading = row.ps.some(p=>/^LAMPIRAN\b/i.test(norm(p.text)));
+            const topicIndex=row.ps.findIndex(p=>/^TENTANG\b/i.test(norm(p.text)));
+            row.sourceAnnexHeaderEnd=topicIndex>=0 ? topicIndex + (norm(row.ps[topicIndex].text)==='TENTANG' ? 1 : 0) : Math.min(4,row.ps.length-1);
+            startAnnex(row.sourceAnnexHeading);
+        }
         const groupWidths = row.prefix === 'Menetapkan' ? [2268, 284, 7371] : [2268, 284, 567, 6804];
         if (row.prefix) inTop = false;
         for (let blockIndex = 0; blockIndex < row.ps.length; blockIndex++) {
@@ -445,11 +453,12 @@ async function buildWord({
             anchorCount = 0;
             const t = norm(item.text),
                 isDrawing = nodes(item.node, 'drawing').length > 0;
+            if(annexStarted && row.sourceAnnexHeading && blockIndex>row.sourceAnnexHeaderEnd) annexHeading=false;
             let role = 'body',
                 extra = {
                     removeNum: true
                 };
-            if (annexStarted && annexHeading && item.node.localName !== 'tbl' &&
+            if (annexStarted && !row.sourceAnnexHeading && annexHeading && item.node.localName !== 'tbl' &&
                 isSourceAnnexHeading(t, metadata)) continue;
             if (startsJointApproval(t)) {
                 flushGroup();
@@ -536,13 +545,16 @@ async function buildWord({
                 previous = t;
                 continue;
             }
-            if (jointApproval) {
+            if (annexStarted && row.sourceAnnexHeading && blockIndex<=row.sourceAnnexHeaderEnd) {
+                role = /^(?:LAMPIRAN|PERATURAN|NOMOR|TAHUN|TENTANG)\b/i.test(t) || blockIndex<5 ? 'annexHeader' : 'body';
+                extra.before = 0;
+            } else if (jointApproval) {
                 role = 'approval';
                 extra.before = startsJointApproval(t) ? 240 : 0;
             } else if (/^MEMUTUSKAN\s*:$/i.test(t)) {
                 inTop = false;
                 role = 'decide';
-            } else if (/^BAB\s+[IVXLCDM]+$/i.test(t)) {
+            } else if (/^BAB\s+[IVXLCDM]+[A-Z]?$/i.test(t)) {
                 inTop = false;
                 chapterTitleNext = true;
                 definitions = false;
@@ -557,7 +569,7 @@ async function buildWord({
             } else if (sectionTitleNext) {
                 role = 'chapterTitle';
                 sectionTitleNext = false;
-            } else if (/^Pasal\s+\d+[A-Za-z]?$/i.test(t)) {
+            } else if (/^Pasal\s+(?:\d+[A-Za-z]?|[IVXLCDM]+)$/i.test(t)) {
                 inTop = false;
                 definitions = false;
                 inAyat = false;
@@ -622,6 +634,7 @@ async function buildWord({
                 if (item.list.kind === 'ayat') inAyat = true;
                 extra.listLevel = item.list.level || (item.list.kind === 'letter' && inAyat ? 1 : 0);
             }
+            if (role === 'body' && /^Pasal\s+(?:\d+[A-Za-z]?|[IVXLCDM]+)$/i.test(previous)) extra.before = 0;
             const p = addParagraph(source, role, extra);
             if (isDrawing && inTop) {
                 for (const extent of p.getElementsByTagNameNS('http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing', 'extent')) {
@@ -635,6 +648,10 @@ async function buildWord({
                         extent.setAttribute('cx', String(Math.round(Number(extent.getAttribute('cx')) * scale)));
                         extent.setAttribute('cy', String(DRAFT_FORMAT.logo.cy));
                     }
+            }
+            if (isDrawing && inTop) {
+                positionGaruda(p);
+                if (!blockText(p).trim()) property(direct(p,'pPr')[0],'spacing',{before:0,after:0,line:1,lineRule:'exact'});
             }
             previous = t;
         }
@@ -652,6 +669,7 @@ async function buildWord({
         });
         out.file('word/settings.xml', xml(settings));
     }
+    await configureFirstPage(d, out);
     forceNoBold(d);
     const documentXml = xml(d);
     parse(documentXml);

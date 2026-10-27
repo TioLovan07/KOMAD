@@ -1,4 +1,4 @@
-import { rememberWord } from './spell-check.js';
+import { rememberWord, refreshSpelling } from './spell-check.js';
 /** Kartu catatan, pilihan koreksi, dan navigasi lokasi. Tidak membentuk Word. */
 import {
     $,
@@ -84,6 +84,22 @@ export function renderReview(onChange) {
                     alert('Kamus perangkat tidak dapat disimpan. Gunakan Biarkan Sesuai Matriks untuk dokumen ini.');
                 }
             }, 'text small'));
+        } else if (issue.kind === 'source-gap' && !issue.resolved) {
+            const details=el('details',undefined,'source-comparison');
+            details.append(el('summary','Bandingkan rumusan awal'));
+            for(const block of issue.candidates) details.append(el('p',block.text,'quote'));
+            card.append(details);
+            card.append(action('Gunakan Lanjutan Awal',async()=>{
+                if (issue.resolved) return;
+                const selected=model;
+                selected.previewReady=null; selected.outputBlob=null;
+                document.dispatchEvent(new CustomEvent('komad:preview-state'));
+                if(issue.choice!=='apply') issue.row.ps.splice(issue.insertAt,0,...issue.candidates.map(block=>({...block,node:block.node.cloneNode(true),list:block.list?{...block.list}:null})));
+                model.decisions.push('Baris '+issue.row.index+' · Pengguna memilih menambahkan rumusan awal yang belum terpetakan.');
+                issue.resolved=true;issue.choice='apply';
+                await refreshSpelling(selected);
+                if(model===selected) onChange();
+            }),action('Hasil Sudah Sesuai, Tanpa Tambahan',()=>resolve('keep'),'text small'));
         } else if (issue.kind === 'editorial') {
             card.append(action('Keluarkan Catatan dari Draft', () => resolve('remove')),
                 action('Biarkan Sesuai Matriks', () => resolve('keep'), 'text small'));

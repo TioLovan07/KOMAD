@@ -3944,7 +3944,9 @@ section.${c}>footer { z-index: 1; }
 		const columns = getComputedStyle(article).columnCount;
 		if (columns !== "auto" && columns !== "1") return 0;
 		const contentLimit = pageHeight - parseFloat(sectionStyle.paddingTop) - parseFloat(sectionStyle.paddingBottom);
-		if (!(contentLimit > 0) || article.scrollHeight <= contentLimit + FIT_EPSILON) return 0;
+		// KOMAD patch: account for the first-page-only title spacer.
+        const initialOffset = Math.max(0, article.getBoundingClientRect().top - section.getBoundingClientRect().top - parseFloat(sectionStyle.paddingTop));
+        if (!(contentLimit > 0) || article.scrollHeight <= contentLimit - initialOffset + FIT_EPSILON) return 0;
 		const header = section.querySelector(":scope > header");
 		const footer = section.querySelector(":scope > footer");
 		const notes = Array.from(section.querySelectorAll(":scope > ol"));
@@ -3953,7 +3955,7 @@ section.${c}>footer { z-index: 1; }
 		let lastPage = section;
 		function newPage() {
 			const shell = section.cloneNode(false);
-			if (header) shell.appendChild(header.cloneNode(true));
+			if (header && !header.querySelector('[id="komad_first_page_spacer"]')) shell.appendChild(header.cloneNode(true));
 			const pageArticle = article.cloneNode(false);
 			shell.appendChild(pageArticle);
 			if (footer) shell.appendChild(footer.cloneNode(true));
@@ -3962,8 +3964,9 @@ section.${c}>footer { z-index: 1; }
 			pages.push(shell);
 			currentArticle = pageArticle;
 		}
-		const fits = () => currentArticle.scrollHeight <= contentLimit + FIT_EPSILON;
-		const bottomLimit = () => currentArticle.getBoundingClientRect().top + contentLimit;
+		const currentLimit = () => contentLimit - Math.max(0, currentArticle.getBoundingClientRect().top - lastPage.getBoundingClientRect().top - parseFloat(sectionStyle.paddingTop));
+        const fits = () => currentArticle.scrollHeight <= currentLimit() + FIT_EPSILON;
+        const bottomLimit = () => currentArticle.getBoundingClientRect().top + currentLimit();
 		const blocks = Array.from(article.children);
 		for (const b of blocks) b.remove();
 		for (let i = 0; i < blocks.length && pages.length < MAX_PAGES_PER_SECTION; i++) {
