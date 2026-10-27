@@ -1112,3 +1112,9 @@ for (const child of DRAFT_FORMAT.roles.annex.children) {
         firstLine: '0'
     };
 }
+
+// Approved office profile: F4 portrait 215 x 330 mm; margins apply to every section/page.
+for (const section of DRAFT_FORMAT.sections) {
+    const margins = section.children.find(child => child.tag === 'pgMar');
+    Object.assign(margins.attrs, {top:'4535', bottom:'1417', left:'1417', right:'1417'});
+}

@@ -1,3 +1,4 @@
+import {triageSpelling} from './spelling-policy.js';
 /** Word checks are advisory. Unknown does not mean incorrect. Documents never leave this device. */
 import {addIssue} from './xml.js';
 const KEY = 'komad-custom-words-v1';
@@ -28,17 +29,19 @@ export async function checkSpelling(model) {
             worker.postMessage({words, custom: customWords()});
         });
         if (result.error) throw Error(result.error);
-        for (const {word, suggestions} of result.unknown.slice(0, 200)) addIssue(model, {
+        const {flagged, unconfirmed} = triageSpelling(result.unknown);
+        model.unconfirmedWords = unconfirmed;
+        for (const {word, suggestions} of flagged.slice(0, 200)) addIssue(model, {
             kind: 'correction', spelling: true, word, suggestions,
             replacement: suggestions[0] || '',
-            title: 'Periksa ejaan: “' + word + '”',
-            message: 'Kata belum dikenali kamus. Nama, istilah khusus, atau kata asing dapat benar. Saran berdasarkan kemiripan ejaan; pilih sendiri, bukan penggantian otomatis.'
+            title: 'Dugaan typo: “' + word + '”',
+            message: 'Ditemukan pola salah ketik dengan satu kandidat yang lolos penyaringan. Periksa konteks sebelum menerapkan.'
         });
         model.decisions.push('Kamus offline: ' + words.length + ' kata unik diperiksa; ' +
-            result.unknown.length + ' kata belum dikenali. Singkatan huruf kapital dilewati. Pemeriksaan tidak menilai konteks atau substansi hukum.');
-        if (result.unknown.length > 200) addIssue(model, {
+            flagged.length + ' dugaan typo; ' + unconfirmed.length + ' kata belum dikenali tidak dijadikan catatan wajib. Singkatan huruf kapital dilewati. Pemeriksaan tidak menilai konteks atau substansi hukum.');
+        if (flagged.length > 200) addIssue(model, {
             kind: 'review', title: 'Sebagian catatan ejaan belum ditampilkan',
-            message: 'Ditemukan ' + result.unknown.length + ' kata belum dikenali; 200 ditampilkan agar panel tetap dapat digunakan. Periksa ejaan seluruh dokumen di Word juga.'
+            message: 'Ditemukan ' + flagged.length + ' kata belum dikenali; 200 ditampilkan agar panel tetap dapat digunakan. Periksa ejaan seluruh dokumen di Word juga.'
         });
     } catch (error) {
         addIssue(model, {kind:'review', title:'Pemeriksaan kamus belum selesai',

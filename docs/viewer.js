@@ -53,6 +53,7 @@ window.renderDraft = async function(buffer) {
         if (getComputedStyle(p).textAlign === 'justify') p.style.textAlignLast = 'start';
     }
     await document.fonts.ready;
+    stabilizeNumberedPreview();
     // docx renderer leaves explicit tab widths in inline spans. Keep those intact.
     const sections = Array.from(pages.querySelectorAll('section.worddoc'));
     pageWidths = sections.map(s => s.offsetWidth);
@@ -238,3 +239,36 @@ pages.addEventListener('keydown', event => {
     if (event.key === 'Escape') hideTooltip();
 });
 window.addEventListener('scroll', hideTooltip);
+
+/** Preview only: keep the label outside the justified text area.
+ * Range extraction preserves inline italics, bookmarks and exact textContent.
+ */
+function stabilizeNumberedPreview() {
+    for (const p of pages.querySelectorAll('article p')) {
+        const tab = p.querySelector('.worddoc-tab-stop');
+        if (!tab || !/^\s*(?:\(\d+\)|[a-z]\.|\d+\.)[\s\u00a0]/i.test(p.textContent)) continue;
+        const before = p.textContent;
+        const style = getComputedStyle(p);
+        const alignment = style.textAlign;
+        const hanging = Math.max(24, -parseFloat(style.textIndent) || 0);
+        const left = parseFloat(style.marginInlineStart) || 0;
+        const range = document.createRange();
+        range.setStart(p, 0);
+        range.setEndAfter(tab);
+        const marker = document.createElement('span');
+        marker.className = 'preview-marker';
+        marker.append(range.extractContents());
+        const content = document.createElement('span');
+        content.className = 'preview-content';
+        while (p.firstChild) content.append(p.firstChild);
+        p.append(marker, content);
+        p.style.display = 'grid';
+        p.style.gridTemplateColumns = hanging + 'px minmax(0, 1fr)';
+        p.style.marginInlineStart = Math.max(0, left - hanging) + 'px';
+        p.style.textIndent = '0px';
+        p.style.textAlign = 'left';
+        content.style.textAlign = alignment;
+        content.style.textAlignLast = 'start';
+        if (p.textContent !== before) throw Error('Teks pratinjau berubah saat merapikan penomoran.');
+    }
+}

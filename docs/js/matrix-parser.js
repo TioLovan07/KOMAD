@@ -1,3 +1,4 @@
+import { missingArticles } from './article-integrity.js';
 import { replacementMatches } from './draft-model.js';
 import { checkSpelling } from './spell-check.js';
 import {
@@ -167,15 +168,11 @@ async function readMatrix(file) {
             hard: true
         });
     }
-    for (const row of m.rows) {
-        if (!row.useRight || /hapus|pindah|reposisi/i.test(row.note)) continue;
-        const before = articleSections(row.left).map(s => s.num);
-        const after = new Set(articleSections(row.ps).map(s => s.num));
-        const missing = before.filter(num => !after.has(num));
-        if (missing.length) addIssue(m, {
-            kind: 'review', hard: true, row,
-            title: 'Judul Pasal hilang pada baris ' + row.index,
-            message: 'Pasal ' + missing.join(', ') + ' ada pada awal tetapi tidak ada pada hasil terpilih. Tidak diasumsikan dihapus. Perjelas matriks lalu unggah ulang.'
+    for (const {row, missing} of missingArticles(m.rows, articleSections)) {
+        addIssue(m, {
+            kind: 'review', row,
+            title: 'Periksa kelengkapan Pasal ' + missing.join(', '),
+            message: 'Nomor Pasal ini ada pada rancangan awal tetapi belum ditemukan di seluruh hasil terpilih. Periksa kemungkinan perubahan nomor, penghapusan, atau penyusunan ulang. Jika sudah sesuai, pilih Sudah Saya Periksa; jika belum, unggah matriks revisi. Aplikasi tidak menambah rumusan otomatis.'
         });
     }
     const seen = new Map();

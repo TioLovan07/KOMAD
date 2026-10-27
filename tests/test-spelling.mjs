@@ -14,3 +14,14 @@ assert.deepEqual(response.unknown.map(x=>x.word),['mengambarkan','dilengakpi']);
 assert.ok(response.unknown[0].suggestions.includes('menggambarkan'));
 assert.ok(response.unknown[1].suggestions.includes('dilengkapi'));
 console.log('PASS: offline dictionary, affixes, adjacent swaps, missing letters, clitics, reduplication, office terms and custom terms.');
+const {triageSpelling}=await import('../docs/js/spelling-policy.js');
+const triage=triageSpelling([
+ {word:'mengambarkan',suggestions:['mengabarkan','mengamarkan','mengembarkan','menggambarkan']},
+ {word:'terintegrasi',suggestions:['berintegrasi']},
+ {word:'Corporate',suggestions:[]},
+ {word:'Undisan',suggestions:['Undissan']},
+ {word:'dimana',suggestions:['dimana-mana']}
+]);
+assert.deepEqual(triage.flagged.map(x=>x.word),['mengambarkan']);
+assert.equal(triage.unconfirmed.length,4);
+console.log('PASS: unknown terms do not become required notes; prefix substitution rejected, actual missing-letter candidate retained.');

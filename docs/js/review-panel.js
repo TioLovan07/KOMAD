@@ -54,16 +54,19 @@ export function renderReview(onChange) {
         };
         if (issue.kind === 'correction') {
             if (issue.spelling && issue.suggestions.length) {
-                const select = el('select');
-                select.setAttribute('aria-label', 'Saran untuk ' + issue.word);
-                for (const text of issue.suggestions) {
-                    const option = el('option', text);
-                    option.value = text;
-                    select.append(option);
+                const group = el('div', undefined, 'suggestion-group');
+                group.append(el('span', 'Rekomendasi perbaikan', 'suggestion-label'));
+                for (const suggestion of issue.suggestions) {
+                    const button = action(suggestion, () => {
+                        issue.replacement = suggestion;
+                        issue.resolved = false;
+                        issue.choice = undefined;
+                        onChange();
+                    }, 'suggestion-option' + (suggestion === issue.replacement ? ' selected' : ''));
+                    button.setAttribute('aria-pressed', String(suggestion === issue.replacement));
+                    group.append(button);
                 }
-                select.value = issue.replacement;
-                select.onchange = () => { issue.replacement = select.value; issue.resolved = false; issue.choice = undefined; onChange(); };
-                card.append(select);
+                card.append(group);
             }
             const apply = action('Terapkan Rekomendasi', () => resolve('apply'));
             apply.disabled = !issue.replacement;
@@ -102,6 +105,13 @@ export function renderReview(onChange) {
             card.append(action(issue.kind === 'advisory' ? 'Lengkapi Nanti' : 'Sudah Saya Periksa', () => resolve(issue.kind === 'advisory' ? 'keep' : undefined), 'text small'));
         }
         $('issues').append(card);
+    }
+    if (model.unconfirmedWords?.length) {
+        const details = el('details', undefined, 'panel spelling-secondary');
+        details.append(el('summary', model.unconfirmedWords.length + ' kata belum dikenali — opsional'));
+        details.append(el('p', 'Bukan dugaan typo yang cukup kuat. Daftar ini tidak menghambat unduhan dan kata tidak diubah.'));
+        details.append(el('p', model.unconfirmedWords.join(', '), 'quote'));
+        $('issues').append(details);
     }
     if (!model.issues.length) $('issues').append(el('p', 'Tidak ada pengecualian yang terdeteksi. Tetap periksa seluruh draft sebelum digunakan.', 'panel issue-empty'));
     $('decisions').replaceChildren(...[
