@@ -1,0 +1,9 @@
+Kamus Bahasa Indonesia Hunspell
+Upstream: https://github.com/LibreOffice/dictionaries/tree/master/id
+Authors: hunspell-id Authors; Benitius Brevoort (see comments in id_ID.aff)
+License: LGPL-3.0-only per upstream SPDX header.
+id_ID.aff and id_ID.dic are distributed unmodified and remain replaceable text files.
+Fetched 2026-10-27. Not an official KBBI service and not a legal-language validator.
+License texts: LICENSE-LGPL-3.0.txt and LICENSE-GPL-3.0.txt.
+Engine: nspell 2.1.5 (MIT), bundled from npm with is-buffer (MIT).
+KOMAD adds a separate limited list of office terms and checks clitics/reduplication.

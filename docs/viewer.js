@@ -47,6 +47,13 @@ window.renderDraft = async function(buffer) {
         img.onload = resolve;
         img.onerror = resolve;
     })));
+    // Links are preview text, never executable/navigation targets.
+    for (const link of pages.querySelectorAll('a[href]')) link.removeAttribute('href');
+    for (const p of pages.querySelectorAll('article p')) {
+        if (getComputedStyle(p).textAlign === 'justify') p.style.textAlignLast = 'start';
+    }
+    await document.fonts.ready;
+    // docx renderer leaves explicit tab widths in inline spans. Keep those intact.
     const sections = Array.from(pages.querySelectorAll('section.worddoc'));
     pageWidths = sections.map(s => s.offsetWidth);
     sections.forEach((s, i) => {

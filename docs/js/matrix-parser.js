@@ -1,3 +1,5 @@
+import { replacementMatches } from './draft-model.js';
+import { checkSpelling } from './spell-check.js';
 import {
     SPELLING_CORRECTIONS,
     isEditorialInstruction
@@ -67,7 +69,7 @@ async function readMatrix(file) {
         rows: [],
         issues: [],
         decisions: [],
-        filename: file.name.replace(/\.docx$/i, '') + '_Draft.docx'
+        filename: 'Draft.docx'
     };
     if (tables.length > 1) addIssue(m, {
         title: 'Ada lebih dari satu tabel',
@@ -165,6 +167,17 @@ async function readMatrix(file) {
             hard: true
         });
     }
+    for (const row of m.rows) {
+        if (!row.useRight || /hapus|pindah|reposisi/i.test(row.note)) continue;
+        const before = articleSections(row.left).map(s => s.num);
+        const after = new Set(articleSections(row.ps).map(s => s.num));
+        const missing = before.filter(num => !after.has(num));
+        if (missing.length) addIssue(m, {
+            kind: 'review', hard: true, row,
+            title: 'Judul Pasal hilang pada baris ' + row.index,
+            message: 'Pasal ' + missing.join(', ') + ' ada pada awal tetapi tidak ada pada hasil terpilih. Tidak diasumsikan dihapus. Perjelas matriks lalu unggah ulang.'
+        });
+    }
     const seen = new Map();
     for (const row of m.rows) {
         for (const sec of articleSections(row.ps)) {
@@ -247,14 +260,14 @@ async function readMatrix(file) {
     }
     const full = m.rows.map(r => plain(r.ps)).join('\n');
     for (const [word, replacement] of SPELLING_CORRECTIONS)
-        if (full.includes(word)) {
+        if (replacementMatches(full, word).length) {
             const locations = [];
             for (const row of m.rows) {
                 let article = '';
                 for (let pi = 0; pi < row.ps.length; pi++) {
                     const p = row.ps[pi];
                     if (/^Pasal\s+\d+[A-Za-z]?$/i.test(norm(p.text))) article = norm(p.text);
-                    if (p.text.includes(word)) locations.push({
+                    if (replacementMatches(p.text, word).length) locations.push({
                         rowIndex: row.index,
                         blockIndex: pi,
                         label: 'Baris ' + row.index + (article ? ' · ' + article : ''),
@@ -277,6 +290,7 @@ async function readMatrix(file) {
         message: 'Nomor, tahun, tanggal, atau nama masih menggunakan titik/ellipsis. Nilainya perlu ditentukan perancang; tidak ada nilai pengganti yang dapat disarankan otomatis.'
     });
 
+    await checkSpelling(m);
     attachIssueLocations(m);
     return m;
 }

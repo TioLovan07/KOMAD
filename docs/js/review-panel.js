@@ -1,3 +1,4 @@
+import { rememberWord } from './spell-check.js';
 /** Kartu catatan, pilihan koreksi, dan navigasi lokasi. Tidak membentuk Word. */
 import {
     $,
@@ -52,11 +53,34 @@ export function renderReview(onChange) {
             onChange();
         };
         if (issue.kind === 'correction') {
+            if (issue.spelling && issue.suggestions.length) {
+                const select = el('select');
+                select.setAttribute('aria-label', 'Saran untuk ' + issue.word);
+                for (const text of issue.suggestions) {
+                    const option = el('option', text);
+                    option.value = text;
+                    select.append(option);
+                }
+                select.value = issue.replacement;
+                select.onchange = () => { issue.replacement = select.value; issue.resolved = false; issue.choice = undefined; onChange(); };
+                card.append(select);
+            }
             const apply = action('Terapkan Rekomendasi', () => resolve('apply'));
+            apply.disabled = !issue.replacement;
             const keep = action('Biarkan Sesuai Matriks', () => resolve('keep'), 'text small');
             apply.setAttribute('aria-pressed', String(issue.choice === 'apply'));
             keep.setAttribute('aria-pressed', String(issue.choice === 'keep'));
             card.append(apply, keep);
+            if (issue.spelling) card.append(action('Tambahkan ke Kamus Perangkat', () => {
+                if (rememberWord(issue.word)) {
+                    for (const other of model.issues.filter(i => i.spelling && i.word.toLowerCase() === issue.word.toLowerCase())) {
+                        other.resolved = true; other.choice = 'keep';
+                    }
+                    resolve('keep');
+                } else {
+                    alert('Kamus perangkat tidak dapat disimpan. Gunakan Biarkan Sesuai Matriks untuk dokumen ini.');
+                }
+            }, 'text small'));
         } else if (issue.kind === 'editorial') {
             card.append(action('Keluarkan Catatan dari Draft', () => resolve('remove')),
                 action('Biarkan Sesuai Matriks', () => resolve('keep'), 'text small'));

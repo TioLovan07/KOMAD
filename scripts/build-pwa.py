@@ -10,7 +10,7 @@ import json
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "docs"
 TEMPLATE = ROOT / "scripts" / "service-worker.template.js"
-RELEASE = "1.0.0"
+RELEASE = "1.1.0"
 
 
 def main():
@@ -18,11 +18,11 @@ def main():
     assets = [
         "index.html", "style.css", "viewer.html", "viewer.js",
         "pwa.js", "pwa-status.js", "manifest.webmanifest",
-        "vendor/jszip.min.js", "vendor/docx-preview.js",
+        "vendor/jszip.min.js", "vendor/docx-preview.js", "vendor/nspell.js",
     ]
     assets += sorted(str(p.relative_to(SITE)) for p in (SITE / "js").glob("*.js"))
     assets += sorted(
-        str(p.relative_to(SITE)) for p in (SITE / "assets").iterdir() if p.is_file()
+        str(p.relative_to(SITE)) for p in (SITE / "assets").rglob("*") if p.is_file()
     )
 
     digest = hashlib.sha256()

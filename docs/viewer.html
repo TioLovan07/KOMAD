@@ -81,18 +81,21 @@ html { overflow: hidden; }
 }
 
 #pages section.worddoc {
-    font-family: "Bookman Old Style", Georgia, serif;
+    font-family: "Bookman Old Style", "Times New Roman", serif !important;
     font-size: 12pt
 }
 
 #pages section.worddoc article p {
-    font-family: "Bookman Old Style", Georgia, serif;
+    font-family: "Bookman Old Style", "Times New Roman", serif !important;
     font-size: 12pt;
-    line-height: normal !important;
+    text-justify: inter-word;
+
     overflow-wrap: normal
 }
 
 #pages section.worddoc article span {
+    font-family: inherit !important;
+    font-size: inherit;
     overflow-wrap: normal !important;
     word-break: normal !important;
     hyphens: none !important

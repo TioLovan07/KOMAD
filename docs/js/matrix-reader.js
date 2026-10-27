@@ -225,6 +225,43 @@ function matrixSelectRumusan(left, right, {
         useRight: false,
         rule: 'Kolom hasil bertuliskan Tetap; rumusan awal digunakan.'
     };
+    // A numbered fragment is not a complete replacement of a chapter/article.
+    const articleHead = p => /^Pasal\s+\d+[A-Za-z]?$/i.test(norm(p.text));
+    const lostArticle = left.some(articleHead) && !right.some(articleHead);
+    if (lostArticle && !right.some(matrixKeepText)) {
+        const keys = new Map();
+        left.forEach((p, i) => {
+            const key = matrixItemKey(p);
+            if (key) keys.set(key, keys.has(key) ? null : i);
+        });
+        const updates = new Map();
+        const safe = right.every(p => {
+            const key = matrixItemKey(p), index = key && keys.get(key);
+            if (!key || index == null || updates.has(index)) return false;
+            updates.set(index, p);
+            return true;
+        });
+        if (safe && updates.size) {
+            addIssue(m, {
+                kind: 'review', rowIndex,
+                title: 'Revisi parsial digabungkan pada baris ' + rowIndex,
+                message: 'Judul BAB/Pasal, pengantar, dan butir lain dipertahankan dari awal. Hanya penanda ' +
+                    right.map(p => matrixItemKey(p)).join(', ') +
+                    ' diganti dari hasil penyempurnaan. Periksa kecocokan nomor dan substansi sebelum menyetujui.'
+            });
+            return {
+                ps: left.map((p, i) => matrixCloneBlock(updates.get(i) || p)),
+                useRight: true,
+                rule: 'Revisi parsial: butir unik diganti berdasarkan penanda; bagian lainnya dipertahankan.'
+            };
+        }
+        addIssue(m, {
+            kind: 'review', hard: true, rowIndex,
+            title: 'Rumusan parsial belum dapat digabungkan pada baris ' + rowIndex,
+            message: 'Hasil tidak memuat judul Pasal asal dan butir tidak dapat dicocokkan secara unik. Draft menampilkan sumber awal sementara; perbaiki matriks sebelum unduhan.'
+        });
+        return {ps: left.map(matrixCloneBlock), useRight: false, rule: 'Sumber awal dipertahankan sementara; penggabungan ambigu memblokir unduhan.'};
+    }
     if (!right.some(matrixKeepText)) return {
         ps: right.map(matrixCloneBlock),
         useRight: true,

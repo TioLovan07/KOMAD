@@ -1,3 +1,4 @@
+import { replacementMatches } from './draft-model.js';
 /**
  * Mengaitkan setiap catatan dengan baris, blok, dan kutipan sumber.
  * Lokasi sumber yang tidak masuk draft ditandai sourceOnly: tidak dibuat sorotan palsu.
@@ -40,11 +41,14 @@ function rowLocations(row, predicate = () => true, options = {}) {
 export function attachIssueLocations(documentModel) {
     for (const issue of documentModel.issues) {
         let locations = [];
-        if (issue.kind === 'editorial') {
+        if (/^Revisi parsial digabungkan/.test(issue.title)) {
+            const row = documentModel.rows.find(row => row.index === issue.rowIndex);
+            if (row) locations = rowLocations(row, block => row.right.some(p => norm(p.text) === norm(block.text)), {related:true});
+        } else if (issue.kind === 'editorial') {
             locations = [makeLocation(issue.row, issue.blockIndex)];
         } else if (issue.kind === 'correction') {
             for (const row of documentModel.rows) {
-                locations.push(...rowLocations(row, block => block.text.includes(issue.word), {
+                locations.push(...rowLocations(row, block => replacementMatches(block.text, issue.word).length > 0, {
                     word: issue.word
                 }));
             }
