@@ -32,3 +32,7 @@ assert.deepEqual(response.unknown,[]);
 const {SPELLING_CORRECTIONS}=await import('../docs/js/editorial-checks.js');
 for (const [a,b] of [['terakomodir','terakomodasi'],['komperensif','komprehensif'],['Restra','Renstra'],['priorotas','prioritas'],['anlisis','analisis'],['sistema','sistem']]) assert.ok(SPELLING_CORRECTIONS.some(pair=>pair[0]===a && pair[1]===b));
 console.log('PASS: requested accepted terms and explicit spelling corrections.');
+await self.onmessage({data:{words:['penelaahan','menelaah','pertanggungjawaban','mempertanggungjawabkan','organisasi','pengorganisasian','keorganisasian'],custom:[]}});
+assert.deepEqual(response.unknown,[]);
+for (const [wrong,right] of [['penelahaan','penelaahan'],['pertangungjawaban','pertanggungjawaban'],['oragnisasi','organisasi']]) assert.ok(SPELLING_CORRECTIONS.some(([a,b])=>a===wrong && b===right));
+console.log('PASS: screenshot typos have explicit corrections; related correct terms are accepted.');

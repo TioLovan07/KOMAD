@@ -18,12 +18,15 @@ export function clearDownloadLinks() {
 }
 
 function saveBlob(blob, filename) {
-    const link = el('a', 'Simpan ' + filename, 'download-link');
+    clearDownloadLinks();
+    const link = el('a');
+    link.hidden = true;
     link.href = URL.createObjectURL(blob);
     objectUrls.add(link.href);
     link.download = filename;
     $('download-links').append(link);
     link.click();
+    link.remove();
 }
 
 export function isDraftReady() {
@@ -33,12 +36,12 @@ export function isDraftReady() {
 export function downloadWord() {
     if (!isDraftReady()) return;
     saveBlob(model.outputBlob, 'Draft.docx');
-    $('status').textContent = 'Unduhan Word dimulai. Jika belum tersimpan, gunakan tautan Simpan pada bagian unduhan.';
+    $('status').textContent = 'Unduhan Word dimulai. Jika belum tersimpan, tekan Unduh Draft Word kembali.';
 }
 
 export function downloadReport() {
     if (!model) return;
-    const lines = ['CATATAN PENYUSUNAN DRAFT', model.name, 'KOMAD 1.3.1', '', 'KEPUTUSAN PENYUSUNAN', ...model.decisions, '', 'PEMERIKSAAN'];
+    const lines = ['CATATAN PENYUSUNAN DRAFT', model.name, 'KOMAD 1.3.2', '', 'KEPUTUSAN PENYUSUNAN', ...model.decisions, '', 'PEMERIKSAAN'];
     for (const issue of model.issues) {
         lines.push((!issue.resolved ? 'BELUM DIPERIKSA' : issue.choice === 'remove' ? 'CATATAN DIKELUARKAN' : issue.choice === 'apply' ? 'REKOMENDASI DITERAPKAN' : issue.choice === 'keep' ? 'SESUAI MATRIKS' : 'SUDAH DIPERIKSA') + ' · ' + issue.title, issue.message);
         for (const location of issue.locations || []) lines.push(location.label + ' · ' + location.context);

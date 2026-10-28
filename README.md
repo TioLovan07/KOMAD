@@ -118,3 +118,9 @@ Lihat PEMBARUAN-1.3.0.md untuk aturan halaman pertama/lanjutan, penomoran peruba
 ### Pembaruan 1.3.1
 
 Lihat PEMBARUAN-1.3.1.md untuk perbaikan gambar pratinjau, pemenggalan tabel, indentasi, kepala lampiran dan pemeriksaan kelengkapan berbasis isi. Dukungan .doc serta pengolahan materi lampiran di luar matriks utama tetap ditunda.
+
+### Pembaruan 1.3.2
+
+Lihat PEMBARUAN-1.3.2.md: konfirmasi perubahan sasaran pasal pada matriks perubahan, tampilan koreksi seragam, satu tombol pengganti file, serta unduhan tanpa tautan duplikat.
+
+Revisi margin pada paket 1.3.2 yang sama: teks pertama di bawah Garuda berada pada posisi 8 cm, dengan ruang tetap hanya di awal dokumen. Halaman lanjutan memakai margin 2,5 cm. Lihat PEMBARUAN-1.3.2.md.

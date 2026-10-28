@@ -11,6 +11,7 @@ export const SPELLING_CORRECTIONS = [
 
 // Explicit corrections: wrong forms are never added as accepted dictionary entries.
 const additions = [
+ ['penelahaan','penelaahan'], ['pertangungjawaban','pertanggungjawaban'], ['oragnisasi','organisasi'],
  ['terakomodir','terakomodasi'], ['komperensif','komprehensif'],
  ['restra','renstra'], ['priorotas','prioritas'], ['anlisis','analisis'], ['sistema','sistem'],
  ['koordinai','koordinasi'], ['singkronisasi','sinkronisasi'],

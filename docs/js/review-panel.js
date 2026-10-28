@@ -37,7 +37,7 @@ export function renderReview(onChange) {
         const card = el('article', undefined, 'panel note' + (issue.resolved ? ' done' : ''));
         card.id = 'issue-' + issue.id;
         const status = issue.resolved ? (issue.choice === 'remove' ? 'CATATAN DIKELUARKAN' : issue.choice === 'apply' ? 'REKOMENDASI DITERAPKAN' : issue.choice === 'keep' ? 'SESUAI MATRIKS' : 'SUDAH DIPERIKSA') : issue.hard ? 'PERBAIKI MATRIKS' : 'PERLU DIPERIKSA';
-        card.append(el('div', status, 'status'), el('h3', issue.title), el('p', issue.message));
+        card.append(el('div', status, 'status'), el('h3', issue.kind === 'correction' ? 'Periksa ejaan: “' + issue.word + '”' : issue.title), el('p', issue.kind === 'correction' ? 'Bandingkan rekomendasi dengan konteks kalimat, lalu tentukan apakah perbaikan diterapkan.' : issue.message));
         const list = el('div', undefined, 'location-list');
         issue.locations.forEach((location, index) => {
             const item = el('div', undefined, 'location-item');
@@ -53,28 +53,31 @@ export function renderReview(onChange) {
             onChange();
         };
         if (issue.kind === 'correction') {
-            if (issue.spelling && issue.suggestions.length) {
-                const group = el('div', undefined, 'suggestion-group');
-                group.append(el('span', 'Rekomendasi perbaikan', 'suggestion-label'));
-                for (const suggestion of issue.suggestions) {
-                    const button = action(suggestion, () => {
-                        issue.replacement = suggestion;
-                        issue.resolved = false;
-                        issue.choice = undefined;
-                        onChange();
-                    }, 'suggestion-option' + (suggestion === issue.replacement ? ' selected' : ''));
-                    button.setAttribute('aria-pressed', String(suggestion === issue.replacement));
-                    group.append(button);
-                }
-                card.append(group);
+            const suggestions = issue.suggestions?.length ? issue.suggestions : [issue.replacement].filter(Boolean);
+            const group = el('div', undefined, 'suggestion-group');
+            group.append(el('span', 'Rekomendasi perbaikan', 'suggestion-label'));
+            if (suggestions.length === 1) group.append(el('div', suggestions[0], 'recommendation-value'));
+            else for (const suggestion of suggestions) {
+                const button = action(suggestion, () => {
+                    issue.replacement = suggestion;
+                    issue.resolved = false;
+                    issue.choice = undefined;
+                    onChange();
+                }, 'suggestion-option' + (suggestion === issue.replacement ? ' selected' : ''));
+                button.setAttribute('aria-pressed', String(suggestion === issue.replacement));
+                group.append(button);
             }
+            card.append(group);
             const apply = action('Terapkan Rekomendasi', () => resolve('apply'));
             apply.disabled = !issue.replacement;
-            const keep = action('Biarkan Sesuai Matriks', () => resolve('keep'), 'text small');
+            const keep = action('Biarkan Sesuai Matriks', () => resolve('keep'));
             apply.setAttribute('aria-pressed', String(issue.choice === 'apply'));
             keep.setAttribute('aria-pressed', String(issue.choice === 'keep'));
             card.append(apply, keep);
-            if (issue.spelling) card.append(action('Tambahkan ke Kamus Perangkat', () => {
+            if (issue.spelling) {
+                const advanced = el('details', undefined, 'dictionary-options');
+                advanced.append(el('summary', 'Pilihan kamus'), el('p', 'Gunakan hanya jika kata pada matriks memang benar, misalnya nama atau istilah khusus.'));
+                advanced.append(action('Anggap Kata Ini Benar di Perangkat', () => {
                 if (rememberWord(issue.word)) {
                     for (const other of model.issues.filter(i => i.spelling && i.word.toLowerCase() === issue.word.toLowerCase())) {
                         other.resolved = true; other.choice = 'keep';
@@ -83,7 +86,9 @@ export function renderReview(onChange) {
                 } else {
                     alert('Kamus perangkat tidak dapat disimpan. Gunakan Biarkan Sesuai Matriks untuk dokumen ini.');
                 }
-            }, 'text small'));
+                }));
+                card.append(advanced);
+            }
         } else if (issue.kind === 'source-gap' && !issue.resolved) {
             const details=el('details',undefined,'source-comparison');
             details.append(el('summary','Bandingkan rumusan awal'));
@@ -104,7 +109,7 @@ export function renderReview(onChange) {
             card.append(action('Keluarkan Catatan dari Draft', () => resolve('remove')),
                 action('Biarkan Sesuai Matriks', () => resolve('keep'), 'text small'));
         } else if (issue.hard) {
-            card.append(action('Pilih Matriks Revisi', () => $('file').click()));
+            card.append(el('p', 'Perbaiki file sumber, lalu gunakan tombol Ganti File Matriks di bagian atas.', 'source-only'));
         } else if (!issue.resolved && issue.kind === 'annex') {
             card.append(action('Gunakan Isi Lampiran Awal', () => {
                 issue.row.ps.push(...issue.annexBody.map(block => ({

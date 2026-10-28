@@ -207,11 +207,11 @@ async function readMatrix(file) {
             hard: true
         });
     }
-    for (const {row, missing} of missingArticles(m.rows, articleSections)) {
+    for (const {row, missing, resultTargets} of missingArticles(m.rows, articleSections)) {
         addIssue(m, {
             kind: 'review', row,
-            title: 'Periksa kelengkapan Pasal ' + missing.join(', '),
-            message: 'Nomor Pasal ini ada pada rancangan awal tetapi belum ditemukan di seluruh hasil terpilih. Periksa kemungkinan perubahan nomor, penghapusan, atau penyusunan ulang. Jika sudah sesuai, pilih Sudah Saya Periksa; jika belum, unggah matriks revisi. Aplikasi tidak menambah rumusan otomatis.'
+            title: resultTargets ? 'Konfirmasi perubahan sasaran pasal' : 'Periksa kelengkapan Pasal ' + missing.join(', '),
+            message: resultTargets ? 'Pada baris ini, kolom awal membahas Pasal ' + missing.join(', ') + ', sedangkan kolom hasil membahas Pasal ' + resultTargets.join(', ') + '. Draft sudah mengikuti kolom hasil. Pastikan perubahan sasaran dan rumusannya memang disepakati, lalu pilih Sudah Saya Periksa. Catatan ini tidak menyatakan isi draft hilang.' : 'Nomor Pasal ini ada pada rancangan awal tetapi belum ditemukan di seluruh hasil terpilih. Periksa kemungkinan perubahan nomor, penghapusan, atau penyusunan ulang. Jika sudah sesuai, pilih Sudah Saya Periksa; jika belum, unggah matriks revisi. Aplikasi tidak menambah rumusan otomatis.'
         });
     }
     const seen = new Map();

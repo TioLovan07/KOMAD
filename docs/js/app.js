@@ -168,7 +168,6 @@ function initializeInterface() {
         $('file').value = '';
         $('file').click();
     };
-    $('reset').onclick = resetDocument;
     $('new-doc').onclick = resetDocument;
     $('to-download').onclick = () => showStage(3);
     $('back-review').onclick = () => showStage(2);

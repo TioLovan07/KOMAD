@@ -18,12 +18,17 @@ with ZipFile(sys.argv[1]) as archive:
         size=section.find("w:pgSz",ns)
         assert abs(int(size.get("{"+W+"}w"))-12191)<=1
         assert abs(int(size.get("{"+W+"}h"))-18711)<=1
-    assert sections[0].find("w:titlePg",ns) is not None, "Missing first-page layout"
-    assert all(s.find("w:titlePg",ns) is None for s in sections[1:]), "Title spacer repeats on a later section"
-    header=ET.fromstring(archive.read("word/komad-first-page.xml"))
-    spacing=header.find(".//w:spacing",ns)
-    assert spacing.get("{"+W+"}line")=="3969", "Unexpected first-page spacer"
+    assert "word/komad-first-page.xml" not in archive.namelist(), "Obsolete empty header is still present"
+    spacer = next((p for p in doc.findall(".//w:body/w:p",ns)
+                   if any(b.get("{"+W+"}name")=="komad_first_page_spacer" for b in p.findall("w:bookmarkStart",ns))),None)
+    assert spacer is not None, "Missing first-page body spacer"
+    spacing=spacer.find("w:pPr/w:spacing",ns)
+    assert spacing.get("{"+W+"}line")=="3118", "Unexpected first-page reserved height"
     assert spacing.get("{"+W+"}lineRule")=="exact"
+    assert not "".join(t.text or "" for t in spacer.findall(".//w:t",ns)).strip(), "Spacer must not add document text"
+    first_text=next(p for p in doc.findall(".//w:body//w:p",ns)
+                    if p is not spacer and "".join(t.text or "" for t in p.findall(".//w:t",ns)).strip())
+    assert first_text.find("w:pPr/w:spacing",ns).get("{"+W+"}before")=="0", "First text has additional spacing"
     for spacing in doc.findall(".//w:pPr/w:spacing",ns):
         if spacing.get("{"+W+"}lineRule")=="auto":
             assert spacing.get("{"+W+"}line")=="240", "Body is not single-spaced"
