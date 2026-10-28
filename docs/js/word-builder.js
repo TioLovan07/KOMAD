@@ -204,6 +204,7 @@ async function buildWord({
         sectionTitleNext = false,
         jointApproval = false,
         annexHeading = true;
+    let annexCount = 0;
 
     // Potret F4 mengikuti halaman utama; lebar tabel dihitung dari margin aktual.
     const portraitSection = () => fromProfile(d, DRAFT_FORMAT.sections[0]);
@@ -311,7 +312,7 @@ async function buildWord({
             }));
             pr.insertBefore(np, pr.firstChild);
         } else if (oldNum && !extra.removeNum) pr.insertBefore(d.importNode(oldNum, true), pr.firstChild);
-        if (['chapter', 'chapterTitle', 'article', 'definitionLead', 'decide', 'set', 'signatureRole'].includes(role)) property(pr, 'keepNext', {
+        if (['chapter', 'chapterTitle', 'article', 'definitionLead', 'decide', 'set', 'signatureRole', 'annexHeader'].includes(role)) property(pr, 'keepNext', {
             val: 1
         });
         if (extra.flat) {
@@ -453,6 +454,15 @@ async function buildWord({
             anchorCount = 0;
             const t = norm(item.text),
                 isDrawing = nodes(item.node, 'drawing').length > 0;
+            if (annexStarted && /^LAMPIRAN(?:\s+[IVXLCDM]+|\s+\d+)?$/i.test(t)) {
+                row.sourceAnnexHeading = true;
+                const remaining = row.ps.slice(blockIndex);
+                const topic = remaining.findIndex(p => /^TENTANG\b/i.test(norm(p.text)));
+                row.sourceAnnexHeaderEnd = topic >= 0 ? blockIndex + topic + (norm(remaining[topic].text).toUpperCase() === 'TENTANG' ? 1 : 0) : blockIndex + 4;
+                annexHeading = true;
+                signatureStage = '';
+                row.annexStartIndex = blockIndex;
+            }
             if(annexStarted && row.sourceAnnexHeading && blockIndex>row.sourceAnnexHeaderEnd) annexHeading=false;
             let role = 'body',
                 extra = {
@@ -546,7 +556,7 @@ async function buildWord({
                 continue;
             }
             if (annexStarted && row.sourceAnnexHeading && blockIndex<=row.sourceAnnexHeaderEnd) {
-                role = /^(?:LAMPIRAN|PERATURAN|NOMOR|TAHUN|TENTANG)\b/i.test(t) || blockIndex<5 ? 'annexHeader' : 'body';
+                role = 'annexHeader';
                 extra.before = 0;
             } else if (jointApproval) {
                 role = 'approval';
@@ -556,13 +566,14 @@ async function buildWord({
                 role = 'decide';
             } else if (/^BAB\s+[IVXLCDM]+[A-Z]?$/i.test(t)) {
                 inTop = false;
-                chapterTitleNext = true;
+                chapterTitleNext = 1;
                 definitions = false;
                 inAyat = false;
                 role = 'chapter';
-            } else if (chapterTitleNext) {
+            } else if (chapterTitleNext && !item.list && !/^(?:Pasal|Bagian|Lampiran)\b/i.test(t) && (chapterTitleNext === 1 || (/[A-ZÀ-Ž]/.test(t) && t === t.toUpperCase()))) {
                 role = 'chapterTitle';
-                chapterTitleNext = false;
+                chapterTitleNext = 2;
+                extra.before = 0;
             } else if (/^Bagian\s+\S+$/i.test(t)) {
                 role = 'article';
                 sectionTitleNext = true;
@@ -615,6 +626,7 @@ async function buildWord({
                 role = definitions ? 'definition' : 'list';
                 extra.before = 0;
             }
+            if (!['chapter','chapterTitle'].includes(role)) chapterTitleNext = false;
             if (role === 'signatureName') {
                 role = 'signature';
                 extra.before = 960;
@@ -632,10 +644,17 @@ async function buildWord({
                 extra.prefix = item.list.marker + '\t';
                 extra.removeNum = true;
                 if (item.list.kind === 'ayat') inAyat = true;
-                extra.listLevel = item.list.level || (item.list.kind === 'letter' && inAyat ? 1 : 0);
+                extra.listLevel = item.list.kind === 'letter' && inAyat ? 1 : 0;
             }
+            if (item.amendmentInstruction) { extra.before = 240; inAyat = false; }
             if (role === 'body' && /^Pasal\s+(?:\d+[A-Za-z]?|[IVXLCDM]+)$/i.test(previous)) extra.before = 0;
             const p = addParagraph(source, role, extra);
+            if (annexStarted && /^LAMPIRAN(?:\s+[IVXLCDM]+|\s+\d+)?$/i.test(t)) {
+                if (annexCount++) {
+                    property(direct(p,'pPr')[0], 'pageBreakBefore', {val:1});
+                    orderPPr(direct(p,'pPr')[0]);
+                }
+            }
             if (isDrawing && inTop) {
                 for (const extent of p.getElementsByTagNameNS('http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing', 'extent')) {
                     const scale = DRAFT_FORMAT.logo.cy / Number(extent.getAttribute('cy'));

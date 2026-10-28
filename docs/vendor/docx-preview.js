@@ -2083,7 +2083,10 @@
 					result.cssStyle["text-align"] = posX.align;
 					result.cssStyle["width"] = "100%";
 				}
-			} else if (wrapType == "wrapNone") {
+			} else if (wrapType == "wrapNone" && posX.relative === "page" && posY.relative === "page") {
+                result.pageAnchor = {width: result.cssStyle.width, height: result.cssStyle.height, top: posY.offset, align: posX.align, left: posX.offset};
+                result.cssStyle.display = "none";
+            } else if (wrapType == "wrapNone") {
 				result.cssStyle["display"] = "block";
 				result.cssStyle["position"] = "relative";
 				result.cssStyle["width"] = "0px";
@@ -3107,7 +3110,7 @@
 				if (elem.type == DomType.Paragraph) {
 					var _s$paragraphProps;
 					const s = this.findStyle(elem.styleName);
-					if (s === null || s === void 0 || (_s$paragraphProps = s.paragraphProps) === null || _s$paragraphProps === void 0 ? void 0 : _s$paragraphProps.pageBreakBefore) {
+					if (elem.pageBreakBefore || (s === null || s === void 0 || (_s$paragraphProps = s.paragraphProps) === null || _s$paragraphProps === void 0 ? void 0 : _s$paragraphProps.pageBreakBefore)) {
 						current.sectProps = sectProps;
 						current.pageBreak = true;
 						current = {
@@ -3539,6 +3542,11 @@ section.${c}>footer { z-index: 1; }
 		}
 		renderDrawing(elem) {
 			var result = this.toHTML(elem, ns.html, "div");
+            if (elem.pageAnchor) {
+                result.dataset.pageAnchor = JSON.stringify(elem.pageAnchor);
+                result.style.display = "none";
+                return result;
+            }
 			result.style.display = "inline-block";
 			result.style.position = "relative";
 			result.style.textIndent = "0px";
@@ -3980,11 +3988,6 @@ section.${c}>footer { z-index: 1; }
 				newPage();
 				continue;
 			}
-			if (tail) {
-				blocks.splice(i + 1, 0, tail);
-				newPage();
-				continue;
-			}
 			block.remove();
 			if (currentArticle.childElementCount === 0) {
 				currentArticle.appendChild(block);
@@ -4017,18 +4020,38 @@ section.${c}>footer { z-index: 1; }
 		return tail;
 	}
 	function splitTable(table, bottomLimit) {
-		const bodyRows = [];
-		for (const tbody of Array.from(table.tBodies)) bodyRows.push(...Array.from(tbody.rows));
-		if (bodyRows.length < 2) return null;
-		const splitIndex = bodyRows.findIndex((r) => r.getBoundingClientRect().bottom > bottomLimit);
-		if (splitIndex <= 0) return null;
-		const tail = table.cloneNode(false);
-		const colgroup = table.querySelector(":scope > colgroup");
-		if (colgroup) tail.appendChild(colgroup.cloneNode(true));
-		if (table.tHead) tail.appendChild(table.tHead.cloneNode(true));
-		for (let i = splitIndex; i < bodyRows.length; i++) tail.appendChild(bodyRows[i]);
-		return tail;
-	}
+        const rows = Array.from(table.rows).filter(row => row.parentElement.tagName !== 'THEAD');
+        const index = rows.findIndex(row => row.getBoundingClientRect().bottom > bottomLimit);
+        if (index < 0) return "allfit";
+        const tail = table.cloneNode(false);
+        const cols = table.querySelector(':scope > colgroup');
+        if (cols) tail.appendChild(cols.cloneNode(true));
+        const tbody = document.createElement('tbody'); tail.appendChild(tbody);
+        const row = rows[index];
+        const splitPoints = Array.from(row.cells).map(cell => findTextSplitOffset(cell, bottomLimit));
+        const canSplit = splitPoints.some(point => point && point !== 'allfit');
+        if (canSplit) {
+            const continuation = row.cloneNode(false);
+            Array.from(row.cells).forEach((cell, i) => {
+                const point = splitPoints[i];
+                let remaining;
+                if (point === 'allfit') remaining = cell.cloneNode(false);
+                else if (point) remaining = splitAt(cell, point.node, point.offset);
+                else {
+                    remaining = cell.cloneNode(false);
+                    while (cell.firstChild) remaining.appendChild(cell.firstChild);
+                }
+                if (!cell.children.length) cell.appendChild(document.createElement('p'));
+                const first = remaining.querySelector('p');
+                if (first) first.style.marginTop = '0pt';
+                continuation.appendChild(remaining);
+            });
+            tbody.appendChild(continuation);
+        } else if (index === 0) return null;
+        for (let i = canSplit ? index + 1 : index; i < rows.length; i++) tbody.appendChild(rows[i]);
+        return tail;
+    }
+
 	/**
 	* Finds the latest text position inside `el` that still renders above
 	* `bottomLimit`, by walking text nodes in order and binary-searching each
@@ -4082,31 +4105,20 @@ section.${c}>footer { z-index: 1; }
 	* ancestors) gets everything from the point on.
 	*/
 	function splitAt(el, textNode, offset) {
-		const tail = el.cloneNode(false);
-		moveTail(textNode.splitText(offset), el, tail);
-		return tail;
-	}
-	/** Moves the split point's following content into a parallel clone
-	* hierarchy under `tailRoot`: `node` and its following siblings go into a
-	* clone of their parent, and each ancestor up to `root` contributes a clone
-	* plus its following siblings. The ORIGINAL ancestors stay in the head —
-	* moving them would rip the head's split-span text out (and reverse the
-	* order of the two text halves in the tail). */
-	function moveTail(node, root, tailRoot) {
-		let child = node;
-		let container = tailRoot;
-		while (child.parentNode && child.parentNode !== root) {
-			const parent = child.parentNode;
-			const parentClone = parent.cloneNode(false);
-			container.appendChild(parentClone);
-			parentClone.appendChild(child);
-			while (child.nextSibling) parentClone.appendChild(child.nextSibling);
-			child = parent;
-			container = parentClone;
-		}
-		if (child === node) tailRoot.appendChild(child);
-		while (child.nextSibling) tailRoot.appendChild(child.nextSibling);
-	}
+        const tail = el.cloneNode(false);
+        const range = el.ownerDocument.createRange();
+        range.setStart(textNode, offset);
+        range.setEnd(el, el.childNodes.length);
+        tail.appendChild(range.extractContents());
+        if (el.style.display === 'grid' && !tail.querySelector(':scope > .preview-marker')) {
+            const marker = document.createElement('span'); marker.className = 'preview-marker';
+            tail.prepend(marker);
+        }
+        tail.style.textIndent = '0pt';
+        tail.style.marginTop = '0pt';
+        return tail;
+    }
+
 	//#endregion
 	//#region src/encryption/cfb.ts
 	var END_OF_CHAIN = 4294967294;
@@ -6201,6 +6213,7 @@ section.${c}>footer { z-index: 1; }
 			if (fontSet === null || fontSet === void 0 ? void 0 : fontSet.ready) try {
 				await fontSet.ready;
 			} catch {}
+			if (ops.beforePaginate) await ops.beforePaginate(bodyContainer);
 			paginateWrapper(bodyContainer, ops.className);
 		}
 		return doc;

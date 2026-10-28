@@ -114,3 +114,7 @@ Lihat PEMBARUAN-1.2.0.md untuk format margin 8 cm seluruh halaman, pemeriksaan p
 
 ## Rilis 1.3.0
 Lihat PEMBARUAN-1.3.0.md untuk aturan halaman pertama/lanjutan, penomoran perubahan, penanganan rumusan belum terpetakan, dan batas lampiran/.doc yang ditunda.
+
+### Pembaruan 1.3.1
+
+Lihat PEMBARUAN-1.3.1.md untuk perbaikan gambar pratinjau, pemenggalan tabel, indentasi, kepala lampiran dan pemeriksaan kelengkapan berbasis isi. Dukungan .doc serta pengolahan materi lampiran di luar matriks utama tetap ditunda.

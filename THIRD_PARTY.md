@@ -17,3 +17,5 @@ The bundled @apollo-design/docx-preview renderer is modified in paginateSection:
 the KOMAD first-page spacer header is not cloned to continuation pages, and
 available page height accounts for occupied header space. Upstream license
 notice is retained. This patch does not change DOCX content.
+
+KOMAD 1.3.1 additional local docx-preview changes: page-relative floating-image positioning, direct paragraph pageBreakBefore, a pre-pagination layout hook, DOM Range splitting with intact inline descendants, and splitting long table rows with or without tbody. Original upstream license remains included.

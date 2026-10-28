@@ -32,6 +32,7 @@ window.renderDraft = async function(buffer) {
         ignoreFonts: false,
         breakPages: true,
         paginate: true,
+        beforePaginate: stabilizeNumberedPreview,
         experimental: true,
         renderHeaders: true,
         renderFooters: true,
@@ -43,6 +44,16 @@ window.renderDraft = async function(buffer) {
         ignoreLastRenderedPageBreak: true,
         useBase64URL: false
     });
+    // Page-relative floating images have no effect on the body/pagination flow.
+    for (const drawing of pages.querySelectorAll('[data-page-anchor]')) {
+        const position = JSON.parse(drawing.dataset.pageAnchor);
+        const section = drawing.closest('section.worddoc');
+        section.appendChild(drawing);
+        Object.assign(drawing.style, {display:'block', position:'absolute', width:position.width,
+            height:position.height, top:position.top, zIndex:'2',
+            left:position.align === 'center' ? '50%' : position.left,
+            transform:position.align === 'center' ? 'translateX(-50%)' : ''});
+    }
     await Promise.all(Array.from(pages.querySelectorAll('img')).map(img => img.complete ? Promise.resolve() : new Promise(resolve => {
         img.onload = resolve;
         img.onerror = resolve;
@@ -251,6 +262,7 @@ window.addEventListener('scroll', hideTooltip);
  */
 function stabilizeNumberedPreview() {
     for (const p of pages.querySelectorAll('article p')) {
+        if (p.querySelector(':scope > .preview-marker')) continue;
         const tab = p.querySelector('.worddoc-tab-stop');
         if (!tab || !/^\s*(?:\(\d+\)|[a-z]\.|\d+\.)[\s\u00a0]/i.test(p.textContent)) continue;
         const before = p.textContent;

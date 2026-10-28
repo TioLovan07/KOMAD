@@ -1,3 +1,4 @@
+import { missingSourceBlocks } from './source-coverage.js';
 import { missingArticles } from './article-integrity.js';
 import { replacementMatches } from './draft-model.js';
 import { checkSpelling } from './spell-check.js';
@@ -134,6 +135,7 @@ async function readMatrix(file) {
         if (/^Pasal II$/i.test(norm(p.text))) amendment = false;
         if (amendment && /^(?:\d+[.)]\s*)?(?:Ketentuan\s+(?:Pasal|huruf|Lampiran)|Di\s*antara\s+(?:BAB|Pasal))/i.test(norm(p.text))) {
             const manual = p.list?.prefixLength || 0;
+            p.amendmentInstruction = true;
             p.list = {...p.list, marker: (++changeNumber) + '.', kind:'number', level:0, prefixLength:manual};
         }
     }
@@ -157,10 +159,11 @@ async function readMatrix(file) {
             const newBody=row.ps.slice(last+1);
             const firstOld=oldBody[0], firstNew=newBody[0];
             if (firstNew && comparable(firstOld).slice(0,65)===comparable(firstNew).slice(0,65) && newBody.length<oldBody.length) {
-                const candidates=oldBody.slice(newBody.length).map(matrixCloneBlock);
+                const candidates=missingSourceBlocks(oldBody, newBody).map(matrixCloneBlock);
+                if (!candidates.length) continue;
                 addIssue(m, {kind:'source-gap', row, insertAt:row.ps.length, candidates,
                     title:'Ada lanjutan rumusan awal yang belum terpetakan',
-                    message:'Awal rumusan cocok, tetapi kolom hasil memuat lebih sedikit paragraf. Periksa apakah lanjutan awal dipertahankan atau memang dikeluarkan.'});
+                    message:'Awal rumusan cocok, tetapi beberapa blok teks awal belum ditemukan pada hasil setelah perbedaan paragraf, spasi, dan tanda baca diabaikan. Bandingkan teksnya; perubahan redaksi yang disengaja juga dapat memunculkan catatan ini.'});
             }
         }
     }

@@ -25,3 +25,10 @@ const triage=triageSpelling([
 assert.deepEqual(triage.flagged.map(x=>x.word),['mengambarkan']);
 assert.equal(triage.unconfirmed.length,4);
 console.log('PASS: unknown terms do not become required notes; prefix substitution rejected, actual missing-letter candidate retained.');
+
+await self.onmessage({data:{words:['ketidakcukupan','mengestimasi','Reviu','menatausahakan','stakeholders','terakomodasi','komprehensif','Renstra'],custom:[]}});
+assert.equal(response.error,undefined);
+assert.deepEqual(response.unknown,[]);
+const {SPELLING_CORRECTIONS}=await import('../docs/js/editorial-checks.js');
+for (const [a,b] of [['terakomodir','terakomodasi'],['komperensif','komprehensif'],['Restra','Renstra'],['priorotas','prioritas'],['anlisis','analisis'],['sistema','sistem']]) assert.ok(SPELLING_CORRECTIONS.some(pair=>pair[0]===a && pair[1]===b));
+console.log('PASS: requested accepted terms and explicit spelling corrections.');
