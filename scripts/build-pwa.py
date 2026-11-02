@@ -10,8 +10,8 @@ import json
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "docs"
 TEMPLATE = ROOT / "scripts" / "service-worker.template.js"
-RELEASE = "1.3.3"
-BUILD = "20261102.3"
+RELEASE = "1.3.4"
+BUILD = "20261103.1"
 
 
 def main():
@@ -19,7 +19,7 @@ def main():
     index=SITE / 'index.html'
     html=index.read_text(encoding='utf-8')
     html=re.sub(r'(<html[^>]*)(>)', lambda m: re.sub(r' data-build="[^"]*"','',m[1])+' data-build="'+BUILD+'"'+m[2],html,count=1)
-    html=re.sub(r'Versi [0-9]+\.[0-9]+\.[0-9]+(?:-experimental\.[0-9]+)?(?: · Build [0-9.]+)?','Versi '+RELEASE+' · Build '+BUILD,html)
+    html=re.sub(r'Versi [0-9]+\.[0-9]+\.[0-9]+(?:-experimental\.[0-9]+)?(?: · Build [0-9.]+)?','Versi '+RELEASE,html)
     index.write_text(html,encoding='utf-8')
     # Daftar eksplisit: file sementara dan unggahan pengguna tidak ikut cache.
     assets = [

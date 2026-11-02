@@ -11,6 +11,8 @@ export const SPELLING_CORRECTIONS = [
 
 // Explicit corrections: wrong forms are never added as accepted dictionary entries.
 const additions = [
+ ['adalan','adalah'], ['disngkat','disingkat'], ['disaingkat','disingkat'], ['meujudkan','mewujudkan'], ['dearah','daerah'], ['akuntasi','akuntansi'], ['diperuntukan','diperuntukkan'], ['sebagaiman','sebagaimana'], ['standarisasi','standardisasi'], ['meminimalisir','meminimalkan'], ['mengakomodir','mengakomodasi'],
+ ['bagiam','bagian'], ['plaporan','pelaporan'], ['monitorng','monitoring'], ['perundangundangan','perundang-undangan'], ['bermaterai','bermeterai'], ['kerkenaan','berkenaan'], ['disetempel','distempel'], ['besertajasa','beserta jasa'],
  ['KKPRnya','KKPR-nya'], ['kkprnya','KKPR-nya'],
  ['pengedalian','pengendalian'], ['yarng','yang'], ['sanski','sanksi'], ['administratrif','administratif'], ['mentaati','menaati'], ['sebaimana','sebagaimana'], ['administatif','administratif'], ['administrastif','administratif'], ['peraturan-perundang-undangan','peraturan perundang-undangan'], ['perundangan-undangan','perundang-undangan'],
  ['dentifikasi','identifikasi'], ['disetiap','di setiap'], ['dimasing-masing','di masing-masing'], ['dimana','di mana'], ['tatacara','tata cara'], ['dilingkungan','di lingkungan'],

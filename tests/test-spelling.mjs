@@ -48,3 +48,8 @@ for(const [a,b] of [['pengedalian','pengendalian'],['yarng','yang'],['Sanski','S
 console.log('PASS: legal terms and spelling corrections 30 October 2026.');
 
 assert.ok(SPELLING_CORRECTIONS.some(p=>p[0]==='KKPRnya'&&p[1]==='KKPR-nya'));
+
+await self.onmessage({data:{words:['penatausahaan','Penatausahaan','Undang-Undang','dasawisma','Parisadha','Bhayangkari','Persit','sub','dianggarkan','dirinci','Portable','Document','e-mail','direnovasi','pemeringkatan','Maret','Mei','April','Juni','SPP-LS','SPM-LS','Perundang','ditransfer','Januari','menganggarkan'],custom:[]}});
+assert.deepEqual(response.unknown,[]);
+for(const [a,b] of [['Bagiam','Bagian'],['bagiam','bagian'],['Plaporan','Pelaporan'],['Monitorng','Monitoring'],['Perundangundangan','Perundang-undangan'],['bermaterai','bermeterai'],['kerkenaan','berkenaan'],['disetempel','distempel'],['besertajasa','beserta jasa'],['Akuntasi','Akuntansi']])assert.ok(SPELLING_CORRECTIONS.some(p=>p[0]===a&&p[1]===b));
+console.log('PASS: 1.3.4 accepted terms and explicit case-aware typo recommendations.');

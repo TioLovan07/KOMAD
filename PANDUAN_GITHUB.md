@@ -1,6 +1,6 @@
-# Memperbarui KOMAD menjadi 1.3.3
+# Memperbarui KOMAD menjadi 1.3.4
 
-Paket ini merupakan revisi 1.3.3 untuk penggunaan awal tim Pak Eka. Batas yang diketahui tertulis di README.md; lihat README untuk perbaikan dan batas yang masih diketahui.
+Paket ini merupakan revisi 1.3.4. Batas yang diketahui tertulis di README.md; lihat README untuk perbaikan dan batas yang masih diketahui.
 
 1. Simpan salinan folder docs versi 1.3.2 di luar repositori, atau simpan commit lama sebagai titik kembali.
 2. Ekstrak ZIP. Salin isi paket ke C:\Users\ASUS\KOMAD (root repositori), pilih ganti berkas yang sama. docs/index.html harus langsung berada pada repositori, bukan dalam folder paket tambahan.
@@ -9,15 +9,16 @@ Paket ini merupakan revisi 1.3.3 untuk penggunaan awal tim Pak Eka. Batas yang d
 ```bat
 cd /d C:\Users\ASUS\KOMAD
 git status
-git add docs scripts tests package.json README.md PANDUAN_GITHUB.md THIRD_PARTY.md PEMBARUAN-1.3.3.md BUKA-KOMAD.cmd buka_komad.py
+git rm --ignore-unmatch PEMBARUAN-1.3.3.md
+git add docs scripts tests package.json README.md PANDUAN_GITHUB.md THIRD_PARTY.md PEMBARUAN-1.3.4.md BUKA-KOMAD.cmd buka_komad.py
 git diff --cached --stat
-git commit -m "Rilis KOMAD v1.3.3"
+git commit -m "Rilis KOMAD v1.3.4"
 git push
 ```
 
 Periksa daftar berkas sebelum commit: jangan sertakan matriks kantor, draft, atau ZIP sumber. Jika identitas Git belum diatur, isi user.name dan user.email milik Anda dahulu.
 
-Tunggu deployment Pages selesai. Tutup dokumen kerja di aplikasi, buka ulang situs dengan internet aktif, dan gunakan tombol pembaruan bila tersedia. Nomor yang diharapkan: Versi 1.3.3 · Build 20261102.3. Jika masih terlihat 1.3.2, pastikan deployment berhasil dan aplikasi yang dibuka menggunakan alamat Pages yang benar. Cache baru tidak dipaksakan ketika dokumen sedang terbuka.
+Tunggu deployment Pages selesai. Tutup dokumen kerja di aplikasi, buka ulang situs dengan internet aktif, dan gunakan tombol pembaruan bila tersedia. Nomor yang diharapkan: Versi 1.3.4. Jika masih terlihat 1.3.2, pastikan deployment berhasil dan aplikasi yang dibuka menggunakan alamat Pages yang benar. Cache baru tidak dipaksakan ketika dokumen sedang terbuka.
 
 ---
 
@@ -27,7 +28,7 @@ Panduan untuk pengelola. Perancang cukup menerima alamat aplikasi, membukanya, l
 
 ## 1. Siapkan isi paket
 
-Ekstrak `KOMAD-v1.3.3-GitHub.zip` di komputer Anda. Di dalamnya terdapat `README.md`, panduan ini, `docs/`, `scripts/`, `tests/`, dan `package.json`.
+Ekstrak `KOMAD-v1.3.4-GitHub.zip` di komputer Anda. Di dalamnya terdapat `README.md`, panduan ini, `docs/`, `scripts/`, `tests/`, dan `package.json`.
 
 Unggah **isi hasil ekstraksi**, bukan berkas ZIP. Pastikan folder `docs/` langsung berada di tingkat pertama repositori; jangan menambah folder pembungkus seperti `komad-release/docs/`.
 

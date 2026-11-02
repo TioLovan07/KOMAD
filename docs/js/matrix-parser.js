@@ -184,10 +184,12 @@ async function readMatrix(file) {
     for (const row of m.rows) for (const p of row.ps) {
         if (/^Pasal I$/i.test(norm(p.text))) amendment = true;
         if (/^Pasal II$/i.test(norm(p.text))) amendment = false;
-        if (amendment && /^(?:\d+[.)]\s*)?(?:Ketentuan\s+(?:Pasal|huruf|Lampiran)|Di\s*antara\s+(?:BAB|Pasal))/i.test(norm(p.text))) {
+        if (amendment && /^(?:\d+[.)]\s*)?(?:Ketentuan\s+(?:Pasal|huruf|Lampiran|(?:ayat|angka)\b.*\bdiubah)|Di\s*antara\s+(?:BAB|Pasal))/i.test(norm(p.text))) {
             const manual = p.list?.prefixLength || 0;
             p.amendmentInstruction = true;
-            p.list = {...p.list, marker: (++changeNumber) + '.', kind:'number', level:0, prefixLength:manual};
+            const original=p.list?.marker || norm(p.text).match(/^(\d+)[.)]\s/)?.[1];
+            changeNumber++;
+            p.list = {...p.list, marker: original ? original.replace(/[.)]$/, '') + '.' : changeNumber + '.', kind:'number', level:0, prefixLength:manual};
         }
     }
     // Identify incomplete replacements without silently filling legal substance.

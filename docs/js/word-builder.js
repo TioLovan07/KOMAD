@@ -584,14 +584,14 @@ async function buildWord({
                 definitions = false;
                 inAyat = false;
                 role = 'chapter';
-            } else if (chapterTitleNext && !item.list && !/^(?:Pasal|Bagian|Lampiran)\b/i.test(t) && (chapterTitleNext === 1 || (/[A-ZÀ-Ž]/.test(t) && t === t.toUpperCase()))) {
+            } else if (chapterTitleNext && !item.list && !/^(?:Pasal|Bagia[nm]|Lampiran)\b/i.test(t) && (chapterTitleNext === 1 || (/[A-ZÀ-Ž]/.test(t) && t === t.toUpperCase()))) {
                 role = 'chapterTitle';
                 chapterTitleNext = 2;
                 extra.before = 0;
-            } else if (/^(?:Bagian\s+\S+|Paragraf\s+\d+[A-Za-z]?)$/i.test(t)) {
+            } else if (/^(?:Bagia[nm]\s+\S+|Paragraf\s+\d+[A-Za-z]?)$/i.test(t)) {
                 role = 'article';
                 sectionTitleNext = true;
-            } else if (sectionTitleNext && !item.list && !/^(?:Pasal|BAB|Bagian|Paragraf|Lampiran)\b/i.test(t)) {
+            } else if (sectionTitleNext && !item.list && !/^(?:Pasal|BAB|Bagia[nm]|Paragraf|Lampiran)\b/i.test(t)) {
                 role = 'chapterTitle';
                 extra.before = 0;
                 sectionTitleNext = false;
@@ -642,7 +642,7 @@ async function buildWord({
                 extra.before = 0;
             }
             if (!['chapter','chapterTitle'].includes(role)) chapterTitleNext = false;
-            if (sectionTitleNext && !/^(?:Bagian\s+\S+|Paragraf\s+\d+[A-Za-z]?)$/i.test(t)) sectionTitleNext = false;
+            if (sectionTitleNext && !/^(?:Bagia[nm]\s+\S+|Paragraf\s+\d+[A-Za-z]?)$/i.test(t)) sectionTitleNext = false;
             if(row.sectionKind==='explanation' && explanationHeading) {
                 if(/^(?:I[.)]?\s*)?UMUM$/i.test(t)) explanationHeading=false;
                 else {role='top';extra.before=/^PENJELASAN$/i.test(t)?0:/^TENTANG$/i.test(t)?240:0;}

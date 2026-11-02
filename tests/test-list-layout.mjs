@@ -11,3 +11,7 @@ console.log('PASS: nested numbers, definition children, continuation ownership, 
 const amend={rows:[{index:2,label:'Perubahan',ps:[{...p('Ketentuan Pasal 1 diubah','1.','number',0),amendmentInstruction:true},p('Pasal 1'),p('Dalam peraturan ini yang dimaksud dengan:'),p('1. Definisi','1.','number',600),{...p('Ketentuan Pasal 8 diubah','2.','number',0),amendmentInstruction:true}]}],issues:[]};annotateLists(amend);assert.equal(amend.issues.length,0);
 
 const flat={rows:[{index:3,label:'Isi',ps:[p('Pasal 1'),p('(1) Rincian:','(1)','ayat',600),p('a. rincian','a.','letter',600)]}],issues:[]};annotateLists(flat);assert.ok(flat.issues.some(i=>i.title.startsWith('Periksa indent')));
+
+const dup={rows:[{index:7,label:'Perubahan',ps:[p('Pasal I'),{...p('1. Ketentuan Pasal 14 diubah','1.','number',0),amendmentInstruction:true},p('Pasal 14'),p('(1) Isi lama','(1)','ayat',600),{...p('1. Ketentuan Lampiran diubah','1.','number',0),amendmentInstruction:true}]}],issues:[]};
+annotateLists(dup);assert.ok(dup.issues.some(i=>i.numbering?.change==='berulang'));assert.equal(dup.rows[0].ps[4].list.marker,'1.');
+console.log('PASS: repeated amendment numbers survive intervening Pasal headings and are reported without renumbering.');

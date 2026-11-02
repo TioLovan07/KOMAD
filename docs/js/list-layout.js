@@ -1,12 +1,13 @@
 /** Infer hierarchy without renumbering or changing source words. */
 import {norm,addIssue} from './xml.js';
-const structural=t=>/^(?:Pasal\s+\d+[A-Za-z]?|BAB\s+(?:[IVXLCDM]+|\d+)|Bagian\s+\S+|Paragraf\s+\d+)$/i.test(t);
+const structural=t=>/^(?:Pasal\s+\d+[A-Za-z]?|BAB\s+(?:[IVXLCDM]+|\d+)|Bagia[nm]\s+\S+|Paragraf\s+\d+)$/i.test(t);
 const ordinal=p=>{const s=p.list.marker.replace(/[().\s]/g,'');return p.list.kind==='letter'?s.toLowerCase().charCodeAt(0)-96:Number(s);};
 export function annotateLists(m) {
  let stack=[],definition=false,section='',previous='',sequences=new Map(),instructionLast=null;
  for(const row of m.rows) for(let i=0;i<row.ps.length;i++) {
   const p=row.ps[i],t=norm(p.text);
   if(p.inlineStructure)continue;
+  if(/^Pasal (?:I|II)$/i.test(t))instructionLast=null;
   if(structural(t)){stack=[];definition=false;sequences=new Map();section=t;previous=t;continue;}
   if(/yang dimaksud dengan\s*:\s*$/i.test(t)){definition=true;stack=[];sequences=new Map();previous=t;continue;}
   if(row.prefix){stack=[];definition=false;continue;}
@@ -32,7 +33,7 @@ export function annotateLists(m) {
     const expected=display(last==null?1:last+1);
     const finding=last==null?'Penanda pertama yang terlihat adalah '+p.list.marker.replace(/\.$/,'')+'. Penanda '+expected+' belum terlihat sebelumnya dalam kelompok ini.':n>last+1?'Setelah '+record.marker+' langsung muncul '+p.list.marker.replace(/\.$/,'')+'. Penanda '+(n-last===2?expected:display(last+1)+' sampai '+display(n-1))+' tidak terlihat di antaranya pada rumusan terpilih.':n===last?'Penanda '+p.list.marker+' muncul lagi pada kelompok yang sama.':'Urutan mundur dari '+record.marker+' ke '+p.list.marker+' pada kelompok yang sama.';
     const change=last==null?'awal kelompok':n>last+1?'melompat':n===last?'berulang':'mundur';
-    addIssue(m,{kind:'review',checkType:'sequence',row,blockIndex:i,title:'Penomoran '+change+': '+(record?record.marker+' → ':'')+p.list.marker+' pada '+(section||row.label),message:finding,
+    addIssue(m,{kind:'review',checkType:'sequence',row,blockIndex:i,title:'Penomoran '+change+': '+(record?record.marker+' → ':'')+p.list.marker+' pada '+(p.amendmentInstruction?'daftar perubahan Pasal I':section||row.label),message:finding,
       action:last==null?'Periksa apakah butir ini lanjutan kelompok sebelumnya, anak daftar yang salah tingkat, atau seharusnya dimulai dari '+expected.replace(/\.$/,'')+'. Jika sumber perlu diperbaiki, ubah penanda/tingkatnya dan unggah ulang. Jika memang disengaja, pilih Sudah Saya Periksa.':'Bandingkan penanda sebelum dan sesudahnya pada matriks. Pastikan apakah ada butir dicoret/dihapus, awal kelompok baru, atau nomor yang salah. Jika harus berurutan, perbaiki sumber dan unggah ulang; jika urutan ini memang disepakati, pilih Sudah Saya Periksa. Nomor tidak diubah otomatis.',
       numbering:{previous:record?.marker,current:p.list.marker,expected,change}});
    }
@@ -40,7 +41,7 @@ export function annotateLists(m) {
    if(p.amendmentInstruction)instructionLast=current;else sequences.set(group,current);
    const indentParent=stack.filter(x=>x.level<level).at(-1);
    if(indentParent && Number.isFinite(p.sourceIndent) && Number.isFinite(indentParent.indent) && p.sourceIndent<=indentParent.indent+60) {
-    addIssue(m,{kind:'review',checkType:'indent',row,blockIndex:i,title:'Periksa indent butir '+p.list.marker+' pada '+(section||row.label),message:'Penanda dibaca sebagai anak daftar, tetapi indent sumber tidak lebih masuk daripada induknya. Draft memakai tingkat anak daftar; pastikan hubungan induk dan rinciannya sebelum menyetujui.',action:'Periksa apakah butir ini rincian dari butir induk atau butir sejajar. Jika rincian, pastikan indent lebih masuk; jika sejajar, perbaiki tingkat daftar pada sumber lalu unggah ulang. Jika hasil sudah benar, pilih Sudah Saya Periksa.'});
+    addIssue(m,{kind:'review',checkType:'indent',row,blockIndex:i,title:'Periksa indent butir '+p.list.marker+' pada '+(p.amendmentInstruction?'daftar perubahan Pasal I':section||row.label),message:'Penanda dibaca sebagai anak daftar, tetapi indent sumber tidak lebih masuk daripada induknya. Draft memakai tingkat anak daftar; pastikan hubungan induk dan rinciannya sebelum menyetujui.',action:'Periksa apakah butir ini rincian dari butir induk atau butir sejajar. Jika rincian, pastikan indent lebih masuk; jika sejajar, perbaiki tingkat daftar pada sumber lalu unggah ulang. Jika hasil sudah benar, pilih Sudah Saya Periksa.'});
    }
    // Starting a new parent invalidates child sequences, even when a child uses the same marker.
    stack=stack.filter(x=>x.level<level);

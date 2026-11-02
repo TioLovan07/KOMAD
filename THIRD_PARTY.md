@@ -20,8 +20,8 @@ notice is retained. This patch does not change DOCX content.
 
 KOMAD 1.3.1 additional local docx-preview changes: page-relative floating-image positioning, direct paragraph pageBreakBefore, a pre-pagination layout hook, DOM Range splitting with intact inline descendants, and splitting long table rows with or without tbody. Original upstream license remains included.
 
-## Legacy DOC reader (experimental)
+## Legacy DOC reader
 
 Alpaq92/JSDoc, src/docToText.js, 0BSD. Pinned commit 821695a884e0c0bb8592a635d9524bb3e116cd67, https://github.com/Alpaq92/JSDoc. License: docs/vendor/legacy-doc-LICENSE.txt. Local change: preserve paragraph/list properties at cell endings; suppress marker-only paragraphs when all source text is struck/hidden in the OOXML adapter. No writer or sample document is bundled. The reader is browser-local and never sends document contents to a service. WMF/EMF and some shapes are not supported.
 
-Tambahan lokal Build 20261101.1 pada adapter DOC: pertahankan indent paragraf, rekonstruksi gridSpan dari batas koordinat tabel, dan pemulihan terbatas gambar raster mengambang pada sel identitas. Pembaca vendor tetap tidak menjamin seluruh shape/textbox DOC.
+Penyesuaian adapter DOC: pertahankan indent paragraf, rekonstruksi gridSpan dari batas koordinat tabel, dan pemulihan terbatas gambar raster mengambang pada sel identitas. Pembaca vendor tetap tidak menjamin seluruh shape/textbox DOC.
