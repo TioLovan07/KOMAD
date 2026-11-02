@@ -1482,3 +1482,7 @@ dialog {
 .dictionary-options { margin-top: 16px; font-size: calc(14px * var(--text-scale)); }
 .dictionary-options summary { cursor: pointer; color: #526679; }
 .file-replace-hint { max-width: 230px; font-size: calc(13px * var(--text-scale)); }
+
+.issue-explanation { padding: 12px 16px; background: #fff8e6; color: #17344c; border-bottom: 1px solid #e3d7b7; white-space: pre-line; line-height: 1.6; font-size: 14px; }
+.more-locations { margin-top: 10px; }
+.more-locations summary { cursor: pointer; font-weight: 600; }

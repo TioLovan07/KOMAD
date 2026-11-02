@@ -11,6 +11,9 @@ export const SPELLING_CORRECTIONS = [
 
 // Explicit corrections: wrong forms are never added as accepted dictionary entries.
 const additions = [
+ ['KKPRnya','KKPR-nya'], ['kkprnya','KKPR-nya'],
+ ['pengedalian','pengendalian'], ['yarng','yang'], ['sanski','sanksi'], ['administratrif','administratif'], ['mentaati','menaati'], ['sebaimana','sebagaimana'], ['administatif','administratif'], ['administrastif','administratif'], ['peraturan-perundang-undangan','peraturan perundang-undangan'], ['perundangan-undangan','perundang-undangan'],
+ ['dentifikasi','identifikasi'], ['disetiap','di setiap'], ['dimasing-masing','di masing-masing'], ['dimana','di mana'], ['tatacara','tata cara'], ['dilingkungan','di lingkungan'],
  ['penelahaan','penelaahan'], ['pertangungjawaban','pertanggungjawaban'], ['oragnisasi','organisasi'],
  ['terakomodir','terakomodasi'], ['komperensif','komprehensif'],
  ['restra','renstra'], ['priorotas','prioritas'], ['anlisis','analisis'], ['sistema','sistem'],

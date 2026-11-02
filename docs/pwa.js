@@ -26,7 +26,7 @@
     function diagnostic(code, errorName = '') {
         const box = document.getElementById('offline-diagnostics');
         box.hidden = false;
-        document.getElementById('offline-diagnostic-text').value = ['KOMAD 1.3.2', 'Kode: ' + code, 'Browser: ' + ((navigator.userAgent.match(/Edg\/[\d.]+|Firefox\/[\d.]+|Chrome\/[\d.]+|Version\/[\d.]+/) || ['tidak dikenali'])[0]), 'HTTPS: ' + (location.protocol === 'https:' ? 'ya' : 'tidak'), 'Konteks aman: ' + (window.isSecureContext ? 'ya' : 'tidak'), 'API offline: ' + ('serviceWorker' in navigator ? 'tersedia' : 'tidak tersedia'), 'Di dalam bingkai: ' + (window.self !== window.top ? 'ya' : 'tidak'), 'Jendela aplikasi: ' + (standalone() ? 'ya' : 'tidak'), errorName ? 'Keterangan: ' + errorName : '', lastPreparationFailure ? 'Komponen gagal: ' + lastPreparationFailure : ''].filter(Boolean).join('\n');
+        document.getElementById('offline-diagnostic-text').value = ['KOMAD 1.3.3 · Build '+document.documentElement.dataset.build, 'Kode: ' + code, 'Browser: ' + ((navigator.userAgent.match(/Edg\/[\d.]+|Firefox\/[\d.]+|Chrome\/[\d.]+|Version\/[\d.]+/) || ['tidak dikenali'])[0]), 'HTTPS: ' + (location.protocol === 'https:' ? 'ya' : 'tidak'), 'Konteks aman: ' + (window.isSecureContext ? 'ya' : 'tidak'), 'API offline: ' + ('serviceWorker' in navigator ? 'tersedia' : 'tidak tersedia'), 'Di dalam bingkai: ' + (window.self !== window.top ? 'ya' : 'tidak'), 'Jendela aplikasi: ' + (standalone() ? 'ya' : 'tidak'), errorName ? 'Keterangan: ' + errorName : '', lastPreparationFailure ? 'Komponen gagal: ' + lastPreparationFailure : ''].filter(Boolean).join('\n');
     }
 
     function state(text, description, kind) {
@@ -103,8 +103,10 @@
 
     function waiting() {
         update.hidden = !registration?.waiting;
+        document.getElementById('update-banner').hidden=!registration?.waiting;
         if (registration?.waiting) document.getElementById('update-note').textContent = 'Versi baru tersedia. Simpan hasil dan selesaikan dokumen sebelum memperbarui.';
     }
+    document.getElementById('show-update').onclick=()=>{update.closest('details').open=true;update.scrollIntoView({block:'center'});update.focus();};
     // No forced activation/reload while a draft is open. Other tabs are checked in the worker too.
     function isWorking() {
         return window.KOMAD_DOCUMENT_OPEN === true;
@@ -157,7 +159,7 @@
             cacheVersion = info.version || '';
             if (ready) {
                 networkState();
-                document.getElementById('app-version').textContent = 'Versi 1.3.2';
+                document.getElementById('app-version').textContent = 'Versi 1.3.3 · Build '+document.documentElement.dataset.build;
             } else {
                 state('Belum siap offline', 'Sebagian komponen belum tersimpan. Sambungkan internet, lalu tekan Periksa pembaruan.', 'error');
                 diagnostic('CACHE_INCOMPLETE');
@@ -227,6 +229,11 @@
         waiting();
         reg.addEventListener('updatefound', () => watchInstalling(reg));
         watchInstalling(reg);
+        let lastCheck=0;
+        const freshCheck=()=>{if(!navigator.onLine||Date.now()-lastCheck<30000)return;lastCheck=Date.now();reg.update().catch(()=>{});};
+        window.addEventListener('online',freshCheck);
+        window.addEventListener('focus',freshCheck);
+        freshCheck();
         let timer;
         try {
             await Promise.race([navigator.serviceWorker.ready, new Promise((_, reject) => {

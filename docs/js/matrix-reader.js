@@ -1,3 +1,4 @@
+import {keepInstruction} from './control-text.js';
 /**
  * Pengenalan kolom, daftar Word, Tetap per butir, dan normalisasi gambar inline.
  */
@@ -190,6 +191,9 @@ function matrixParagraphs(cell, catalog, state) {
         p.text = blockText(p.node);
         p.list = native || matrixManualMarker(p.text);
         p.sourceArticle = sourceArticle;
+        const pr=direct(node,'pPr')[0],ind=pr&&direct(pr,'ind')[0];
+        const indent=ind&&(val(ind,'left')||val(ind,'start'));
+        p.sourceIndent=indent!==''&&indent!=null?Number(indent):null;
         if (p.text.trim() || nodes(p.node, 'drawing').length || nodes(p.node, 'pict').length) result.push(p);
     }
     return result;
@@ -206,7 +210,7 @@ function matrixCloneBlock(p) {
 }
 
 function matrixKeepText(p) {
-    return /^(?:\s*(?:\d+[.)]|[a-z][.)]|\(\d+\))\s*)?tetap\s*[.;]?\s*$/i.test(p.text);
+    return !!keepInstruction(p);
 }
 
 function matrixItemKey(p) {

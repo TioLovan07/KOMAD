@@ -17,10 +17,11 @@ export function documentMetadata(rows) {
     }
     const heading = lines.join(' ');
     const regulation = heading.match(/\bPERATURAN\s+(?:DAERAH\s+(?:KABUPATEN|KOTA|PROVINSI)|BUPATI|WALI\s*KOTA|GUBERNUR)\s+(.+?)(?=\s+(?:NOMOR|TENTANG|DENGAN RAHMAT)|$)/i);
-    const type = regulation ? clean(regulation[0]).toUpperCase() : 'PERATURAN …';
+    const identity=lines.find(t=>/^(?:BUPATI|WALI\s*KOTA|GUBERNUR)\s+[^,]+$/i.test(t));
+    const type = regulation ? clean(regulation[0]).toUpperCase() : lines.some(t=>/^PERATURAN$/i.test(t))&&identity ? 'PERATURAN '+identity.toUpperCase() : 'PERATURAN …';
     const numberLine = lines.find(text => /^NOMOR\b/i.test(text));
-    const number = numberLine?.match(/^NOMOR\s+(.+?)\s+TAHUN\s+(.+?)(?=\s+TENTANG|$)/i);
-    const topic = heading.match(/\bTENTANG\s+(.+?)(?=\s+DENGAN\s+RAHMAT|\s+(?:BUPATI|GUBERNUR|WALI\s*KOTA)\s+[^,]+,|$)/i);
+    const number = numberLine?.match(/^NOMOR\s*(.+?)\s*TAHUN\s*(.+?)(?=\s+TENTANG|$)/i);
+    const topic = heading.match(/\bTENTANG\s+(.+?)(?=\s+DENGAN\s+RAHMAT|$)/i);
     return {
         regulation: type,
         number: number ? clean(number[1]) : '…',

@@ -10,15 +10,22 @@ import json
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "docs"
 TEMPLATE = ROOT / "scripts" / "service-worker.template.js"
-RELEASE = "1.3.2"
+RELEASE = "1.3.3"
+BUILD = "20261102.3"
 
 
 def main():
+    import re
+    index=SITE / 'index.html'
+    html=index.read_text(encoding='utf-8')
+    html=re.sub(r'(<html[^>]*)(>)', lambda m: re.sub(r' data-build="[^"]*"','',m[1])+' data-build="'+BUILD+'"'+m[2],html,count=1)
+    html=re.sub(r'Versi [0-9]+\.[0-9]+\.[0-9]+(?:-experimental\.[0-9]+)?(?: · Build [0-9.]+)?','Versi '+RELEASE+' · Build '+BUILD,html)
+    index.write_text(html,encoding='utf-8')
     # Daftar eksplisit: file sementara dan unggahan pengguna tidak ikut cache.
     assets = [
         "index.html", "style.css", "viewer.html", "viewer.js",
         "pwa.js", "pwa-status.js", "manifest.webmanifest",
-        "vendor/jszip.min.js", "vendor/docx-preview.js", "vendor/nspell.js",
+        "vendor/jszip.min.js", "vendor/docx-preview.js", "vendor/nspell.js", "vendor/legacy-doc.js",
     ]
     assets += sorted(str(p.relative_to(SITE)) for p in (SITE / "js").glob("*.js"))
     assets += sorted(
@@ -31,11 +38,12 @@ def main():
         digest.update((SITE / asset).read_bytes())
     digest.update(Path(__file__).read_bytes())
     digest.update(TEMPLATE.read_bytes())
-    version = RELEASE + "-" + digest.hexdigest()[:12]
+    version = RELEASE + "+" + BUILD + "-" + digest.hexdigest()[:12]
 
     source = TEMPLATE.read_text(encoding="utf-8")
     source = source.replace("__VERSION__", json.dumps(version))
     source = source.replace("__ASSETS__", json.dumps(assets))
+    source = source.replace("__DIGESTS__", json.dumps({a:hashlib.sha256((SITE/a).read_bytes()).hexdigest() for a in assets}))
     (SITE / "sw.js").write_text(source, encoding="utf-8")
     print("PWA shell:", version, len(assets), "assets")
 

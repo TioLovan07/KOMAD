@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {selectStructurePlan} from '../docs/js/structure-plan.js';
+import {experimentalSelect} from '../docs/js/merge-rumusan.js';
+const p=text=>({text,node:{localName:'p',cloneNode(){return this;}}});
+const old=['BAB I','KETENTUAN UMUM','Pasal 1','Definisi awal lengkap.','Pasal 2','Ketentuan tugas lengkap.','BAB II','KETENTUAN PERALIHAN','Pasal 3','Nomenklatur lama tetap berlaku.','BAB III','KETENTUAN PENUTUP','Pasal 4','Peraturan berlaku pada tanggal diundangkan.'].map(p);
+const result=['BAB I','KETENTUAN UMUM','Pasal 1','Tetap','Pasal 2','Tetap','BAB II','PENDANAAN','Pasal 3','Pendanaan bersumber dari anggaran daerah.','BAB III','KETENTUAN PERALIHAN','Pasal 4','Tetap','BAB IV','KETENTUAN PENUTUP','Pasal 5'].map(p);
+const m={issues:[]},options={m,rowIndex:10,note:''};
+const x=selectStructurePlan(old,result,options,experimentalSelect);
+assert.ok(x?.structurePlan);assert.ok(!m.issues.some(i=>i.hard));
+assert.deepEqual(x.ps.filter(p=>/^Pasal/.test(p.text)).map(p=>p.text),['Pasal 1','Pasal 2','Pasal 3','Pasal 4','Pasal 5']);
+assert.ok(x.ps.some(p=>p.text==='Pendanaan bersumber dari anggaran daerah.'));assert.ok(x.ps.some(p=>p.text==='Nomenklatur lama tetap berlaku.'));assert.ok(x.ps.some(p=>p.text==='Peraturan berlaku pada tanggal diundangkan.'));assert.ok(!x.ps.some(p=>p.text==='Tetap'));
+assert.equal(selectStructurePlan(old,[...result,p('Pasal 5')],{m:{issues:[]},rowIndex:1},experimentalSelect),null);
+const bad=result.filter(p=>p.text!=='Pendanaan bersumber dari anggaran daerah.');const bm={issues:[]};selectStructurePlan(old,bad,{m:bm,rowIndex:1},experimentalSelect);assert.ok(bm.issues.some(i=>i.hard));
+console.log('PASS: chapter-anchored insertion/renumbering, heading-only retention, ambiguous insertion remains blocked.');

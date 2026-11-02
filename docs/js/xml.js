@@ -98,7 +98,7 @@ function articleSections(ps) {
                 start: i,
                 end: ps.length
             };
-        } else if (/^BAB\s+[IVXLCDM]+$/i.test(t) && current) {
+        } else if (!ps[i].inlineStructure && /^BAB\s+[IVXLCDM]+$/i.test(t) && current) {
             current.end = i;
             out.push(current);
             current = null;

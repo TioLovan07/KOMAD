@@ -41,7 +41,9 @@ function rowLocations(row, predicate = () => true, options = {}) {
 export function attachIssueLocations(documentModel) {
     for (const issue of documentModel.issues) {
         let locations = [];
-        if (issue.kind === 'source-gap') {
+        if (issue.row && Number.isInteger(issue.blockIndex)) {
+            locations=[makeLocation(issue.row,issue.blockIndex)];
+        } else if (issue.kind === 'source-gap') {
             locations = rowLocations(issue.row, block => /^Pasal\s/.test(norm(block.text)), {related:true});
             for (const candidate of issue.candidates) locations.push({
                 rowIndex:issue.row.index, label:'Baris matriks '+issue.row.index+' · Rumusan awal belum terpetakan',
@@ -105,6 +107,10 @@ export function attachIssueLocations(documentModel) {
                 sourceOnly: true
             });
             if (issue.kind === 'annex') locations = locations.slice(0, 2);
+        } else if (issue.rowIndex && issue.excerpt) {
+            const row=documentModel.rows.find(r=>r.index===issue.rowIndex);
+            if(row)locations=rowLocations(row,block=>/^Pasal\s+\d+[A-Za-z]?$/.test(norm(block.text)) && issue.message.includes(norm(block.text)+' '),{related:true});
+            if(!locations.length)locations=[{rowIndex:issue.rowIndex,label:'Baris matriks '+issue.rowIndex,context:issue.excerpt,sourceOnly:true}];
         } else if (issue.rowIndex) {
             const row = documentModel.rows.find(row => row.index === issue.rowIndex);
             locations.push({

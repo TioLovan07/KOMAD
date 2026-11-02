@@ -263,6 +263,7 @@ window.addEventListener('scroll', hideTooltip);
 function stabilizeNumberedPreview() {
     for (const p of pages.querySelectorAll('article p')) {
         if (p.querySelector(':scope > .preview-marker')) continue;
+        if (stabilizeOutlinePreview(p)) continue;
         const tab = p.querySelector('.worddoc-tab-stop');
         if (!tab || !/^\s*(?:\(\d+\)|[a-z]\.|\d+\.)[\s\u00a0]/i.test(p.textContent)) continue;
         const before = p.textContent;
@@ -289,4 +290,41 @@ function stabilizeNumberedPreview() {
         content.style.textAlignLast = 'start';
         if (p.textContent !== before) throw Error('Teks pratinjau berubah saat merapikan penomoran.');
     }
+}
+
+/** The renderer represents Word tabs as em spaces. Keep BAB references inside
+ * an ayat in the same three columns as their exported hanging-indent layout. */
+function stabilizeOutlinePreview(p) {
+    const tabs = [...p.querySelectorAll('.worddoc-tab-stop')];
+    if (tabs.length !== 2 || !/^\s*BAB\s+[IVXLCDM]+\.?\s*:\s+\S/i.test(p.textContent)) return false;
+    const before = p.textContent;
+    const style = getComputedStyle(p);
+    const hanging = -parseFloat(style.textIndent);
+    if (!(hanging > 30)) return false;
+    const left = parseFloat(style.marginInlineStart) || 0;
+    const marker = document.createElement('span');
+    marker.className = 'preview-marker';
+    const range = document.createRange();
+    range.setStart(p, 0);
+    range.setEndAfter(tabs[0]);
+    marker.append(range.extractContents());
+    const colon = document.createElement('span');
+    colon.className = 'preview-colon';
+    range.setStart(p, 0);
+    range.setEndAfter(tabs[1]);
+    colon.append(range.extractContents());
+    const content = document.createElement('span');
+    content.className = 'preview-content';
+    while (p.firstChild) content.append(p.firstChild);
+    p.append(marker, colon, content);
+    // Exported stops are 4819 and 5103 twips (284 twips between : and text).
+    const colonWidth = Math.min(284 / 15, hanging / 4);
+    p.classList.add('preview-outline');
+    p.style.display = 'grid';
+    p.style.gridTemplateColumns = (hanging - colonWidth) + 'px ' + colonWidth + 'px minmax(0, 1fr)';
+    p.style.marginInlineStart = Math.max(0, left - hanging) + 'px';
+    p.style.textIndent = '0px';
+    p.style.textAlign = 'left';
+    if (p.textContent !== before) throw Error('Teks pratinjau berubah saat merapikan daftar BAB.');
+    return true;
 }

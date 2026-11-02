@@ -27,12 +27,16 @@ const {chromium} = require(process.env.KOMAD_PLAYWRIGHT_MODULE || 'playwright');
                 const actual = key([...document.querySelectorAll('article')].map(a=>a.textContent).join(''));
                 const sections = [...document.querySelectorAll('section.worddoc')];
                 const annex = [...document.querySelectorAll('article p')].filter(p=>/^LAMPIRAN [IVX]+$/.test(p.textContent.trim()));
+                const outlines = [...document.querySelectorAll('.preview-outline')];
+                const starts = selector => outlines.map(p => p.querySelector(selector).getBoundingClientRect().left - p.closest('article').getBoundingClientRect().left);
+                const aligned = selector => { const x=starts(selector);return !x.length || Math.max(...x)-Math.min(...x)<1; };
                 return {
                     same: expected === actual,
                     firstTextTop: (()=>{ const p=[...sections[0].querySelectorAll('article p')].find(p=>p.textContent.trim());return (p.getBoundingClientRect().top-sections[0].getBoundingClientRect().top)*2.54/96; })(),
                     sized: sections.every(s=>Math.abs(s.getBoundingClientRect().height-parseFloat(getComputedStyle(s).minHeight)) < 2),
                     images: [...document.images].every(i=>i.complete && i.naturalWidth>0 && i.getBoundingClientRect().width>0),
                     annexPages: annex.map(p=>sections.indexOf(p.closest('section'))),
+                    outlineAligned: aligned('.preview-colon') && aligned('.preview-content'),
                     pages: sections.length
                 };
             }, [...fs.readFileSync(file)]);
@@ -40,6 +44,7 @@ const {chromium} = require(process.env.KOMAD_PLAYWRIGHT_MODULE || 'playwright');
             assert.ok(result.same, 'Preview lost or reordered document text');
             assert.ok(result.sized, 'Preview page exceeds the specified paper height');
             assert.ok(result.images, 'Preview contains an invisible/broken image');
+            assert.ok(result.outlineAligned, 'BAB outline columns do not align');
             assert.equal(new Set(result.annexPages).size,result.annexPages.length,'Appendix titles share a page');
             console.log('PASS:',file,result.pages,'pages; complete text, images, page size, appendix breaks.');
         } finally { await browser.close(); }

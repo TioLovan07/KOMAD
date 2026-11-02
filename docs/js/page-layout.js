@@ -57,7 +57,12 @@ export async function configureFirstPage(doc, archive) {
     let pr=direct(spacer,'pPr')[0];
     if(!pr) {pr=make('pPr');spacer.insertBefore(pr,spacer.firstChild);}
     for(const name of ['keepNext','keepLines','pageBreakBefore','sectPr','numPr']) direct(pr,name).forEach(node=>node.remove());
+    const pictureOnly=spacer.getElementsByTagNameNS(W,'drawing').length>0||spacer.getElementsByTagNameNS(W,'pict').length>0;
     set(pr,'spacing',{before:0,after:0,line:3118,lineRule:'exact'});
+    if(!pictureOnly) {
+        set(pr,'snapToGrid',{val:0});
+        const rp=set(pr,'rPr',{});set(rp,'sz',{val:2});set(rp,'szCs',{val:2});
+    }
     set(pr,'ind',{left:0,right:0,firstLine:0});
     orderPr(pr);
     // Stable marker lets the regression checks identify the spacer paragraph.
@@ -69,7 +74,8 @@ export async function configureFirstPage(doc, archive) {
     if(!spacer.getElementsByTagNameNS(W,'r').length) {
         const run=make('r'),blank=make('t');
         blank.setAttributeNS('http://www.w3.org/XML/1998/namespace','xml:space','preserve');
-        blank.textContent=' ';run.append(blank);spacer.append(run);
+        const rp=make('rPr');rp.append(make('sz',{val:2}),make('szCs',{val:2}));run.append(rp);
+        blank.textContent='\u00a0';run.append(blank);spacer.append(run);
     }
     const firstText=[...body.getElementsByTagNameNS(W,'p')].find(p=>p!==spacer && text(p));
     if(firstText) {

@@ -1,3 +1,4 @@
+import {issueGuidance} from './issue-guidance.js';
 import { rememberWord, refreshSpelling } from './spell-check.js';
 /** Kartu catatan, pilihan koreksi, dan navigasi lokasi. Tidak membentuk Word. */
 import {
@@ -33,19 +34,28 @@ function showLocation(issue, index) {
 export function renderReview(onChange) {
     attachIssueLocations(model);
     $('issues').replaceChildren();
-    for (const issue of model.issues) {
+    const priority=issue=>issue.resolved?9:issue.hard?0:issue.kind==='source-gap'?1:issue.checkType==='sequence'||issue.checkType==='indent'?2:issue.kind==='correction'?3:4;
+    for (const issue of [...model.issues].sort((a,b)=>priority(a)-priority(b))) {
         const card = el('article', undefined, 'panel note' + (issue.resolved ? ' done' : ''));
         card.id = 'issue-' + issue.id;
-        const status = issue.resolved ? (issue.choice === 'remove' ? 'CATATAN DIKELUARKAN' : issue.choice === 'apply' ? 'REKOMENDASI DITERAPKAN' : issue.choice === 'keep' ? 'SESUAI MATRIKS' : 'SUDAH DIPERIKSA') : issue.hard ? 'PERBAIKI MATRIKS' : 'PERLU DIPERIKSA';
-        card.append(el('div', status, 'status'), el('h3', issue.kind === 'correction' ? 'Periksa ejaan: “' + issue.word + '”' : issue.title), el('p', issue.kind === 'correction' ? 'Bandingkan rekomendasi dengan konteks kalimat, lalu tentukan apakah perbaikan diterapkan.' : issue.message));
+        const status = issue.resolved ? (issue.choice === 'remove' ? 'CATATAN DIKELUARKAN' : issue.choice === 'apply' ? 'REKOMENDASI DITERAPKAN' : issue.choice === 'keep' ? 'SESUAI MATRIKS' : 'SUDAH DIPERIKSA') : issue.hard ? 'PERLU KEPASTIAN' : 'PERLU DIPERIKSA';
+        const guidance=issueGuidance(issue);
+        card.append(el('div', status, 'status'), el('h3', issue.kind === 'correction' ? 'Periksa ejaan: “' + issue.word + '”' : issue.title));
+        card.append(el('strong','Masalah yang ditemukan'),el('p',guidance.problem,'issue-problem'),el('strong','Yang perlu dilakukan'),el('p',guidance.action,'issue-action'));
         const list = el('div', undefined, 'location-list');
+        let more;
+        if(issue.locations.length>3) {
+            more=el('details',undefined,'more-locations');
+            more.append(el('summary',(issue.locations.length-3)+' lokasi terkait lainnya'));
+        }
         issue.locations.forEach((location, index) => {
             const item = el('div', undefined, 'location-item');
             item.append(el('strong', location.label), el('p', location.context || 'Bagian ini belum berisi teks.', 'quote'));
             if (location.sourceOnly) item.append(el('p', 'Bagian belum tersedia di draft atau hanya tercantum pada matriks sumber.', 'source-only'));
             item.append(action(location.sourceOnly ? 'Lihat Keterangan Lokasi' : issue.locations.length > 1 ? 'Lihat Bagian ' + (index + 1) : 'Lihat Bagian', () => showLocation(issue, index)));
-            list.append(item);
+            if(index>=3&&more)more.append(item);else list.append(item);
         });
+        if(more)list.append(more);
         card.append(list);
         const resolve = choice => {
             issue.resolved = true;
@@ -109,7 +119,7 @@ export function renderReview(onChange) {
             card.append(action('Keluarkan Catatan dari Draft', () => resolve('remove')),
                 action('Biarkan Sesuai Matriks', () => resolve('keep'), 'text small'));
         } else if (issue.hard) {
-            card.append(el('p', 'Perbaiki file sumber, lalu gunakan tombol Ganti File Matriks di bagian atas.', 'source-only'));
+            card.append(el('p', 'Sasaran atau kelengkapan rumusan belum dapat dipastikan. Periksa catatan dan sumber; jika perlu, perjelas matriks lalu gunakan Ganti File Matriks.', 'source-only'));
         } else if (!issue.resolved && issue.kind === 'annex') {
             card.append(action('Gunakan Isi Lampiran Awal', () => {
                 issue.row.ps.push(...issue.annexBody.map(block => ({

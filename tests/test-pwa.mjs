@@ -1,3 +1,4 @@
+import {webcrypto} from 'node:crypto';
 import vm from 'node:vm';
 import fs from 'node:fs/promises';
 import assert from 'node:assert/strict';
@@ -37,10 +38,10 @@ function environment(failAt = '', badRedirect = false) {
     const fetch = async request => {
         const url = typeof request === 'string' ? request : request.url;
         network.push(url);
-        if (url.endsWith(failAt) && failAt) throw Error('network failure');
+        if (url.endsWith(failAt) && failAt && !failAt.startsWith('tamper:')) throw Error('network failure');
         const relative = url.slice(origin.length) || 'index.html',
             body = await fs.readFile(new URL(relative, dist));
-        const response = new Response(body, {
+        const response = new Response(failAt==='tamper:'+relative?Buffer.from('old build'):body, {
             headers: {
                 'Content-Type': relative.endsWith('.js') ? 'application/javascript' : relative.endsWith('.html') ? 'text/html' : 'application/octet-stream'
             }
@@ -71,6 +72,7 @@ function environment(failAt = '', badRedirect = false) {
     };
     vm.runInNewContext(source, {
         self,
+        crypto:webcrypto,
         caches,
         fetch,
         URL,
@@ -185,6 +187,9 @@ assert(good.skipped);
 const broken = environment('viewer.js');
 await assert.rejects(broken.dispatch('install'));
 assert.equal(broken.data.size, 0, 'Partial install must not claim offline readiness');
+const mixedBuild=environment('tamper:viewer.js');
+await assert.rejects(mixedBuild.dispatch('install'),/BUILD_MISMATCH/);
+assert.equal(mixedBuild.data.size,0);
 const invalidRedirect = environment('', true);
 await assert.rejects(invalidRedirect.dispatch('install'), /UNEXPECTED_REDIRECT/);
 assert.equal(invalidRedirect.data.size, 0, 'A login or unrelated redirect must not be cached');

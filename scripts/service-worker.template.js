@@ -3,6 +3,7 @@
 const VERSION = __VERSION__,
     CACHE = 'komad-shell-' + VERSION,
     ASSETS = __ASSETS__;
+const DIGESTS = __DIGESTS__;
 const base = new URL('./', self.location.href);
 // Fetch the canonical home URL: static hosts redirect /index.html to /.
 const urls = ASSETS.map(p => new URL(p === 'index.html' ? './' : p, base).href);
@@ -18,6 +19,8 @@ self.addEventListener('install', event => event.waitUntil((async () => {
                 credentials: 'same-origin'
             }));
             if (!response.ok) throw Error('HTTP_' + response.status);
+            const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await response.clone().arrayBuffer()))).map(x=>x.toString(16).padStart(2,'0')).join('');
+            if(digest!==DIGESTS[ASSETS[i]])throw Error('BUILD_MISMATCH');
             const finalURL = new URL(response.url);
             if (finalURL.origin !== base.origin) throw Error('CROSS_ORIGIN_RESPONSE');
             if (response.redirected) {

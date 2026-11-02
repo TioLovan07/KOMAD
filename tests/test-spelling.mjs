@@ -36,3 +36,15 @@ await self.onmessage({data:{words:['penelaahan','menelaah','pertanggungjawaban',
 assert.deepEqual(response.unknown,[]);
 for (const [wrong,right] of [['penelahaan','penelaahan'],['pertangungjawaban','pertanggungjawaban'],['oragnisasi','organisasi']]) assert.ok(SPELLING_CORRECTIONS.some(([a,b])=>a===wrong && b===right));
 console.log('PASS: screenshot typos have explicit corrections; related correct terms are accepted.');
+
+await self.onmessage({data:{words:['Kotamadya','Paralegal','Nonlitigasi','terakreditasi','direkrut','drafting','mengadvokasi','dipidana','secondary','employment','moonlighting','revolving','door','cooling','period','beneficial','ownership','selambat-lambatnya','off','difasilitasi','dugaan','terlapor','online','offline'],custom:[]}});
+assert.deepEqual(response.unknown,[]);
+for (const [a,b] of [['dentifikasi','identifikasi'],['disetiap','di setiap'],['dimasing-masing','di masing-masing'],['dimana','di mana'],['tatacara','tata cara'],['dilingkungan','di lingkungan']]) assert.ok(SPELLING_CORRECTIONS.some(p=>p[0]===a&&p[1]===b));
+console.log('PASS: requested legal and foreign terms plus six explicit corrections.');
+
+await self.onmessage({data:{words:['ketidaktaatan','ketidakpatuhan','dipersyaratkan','mutatis','mutandis','ketidaksesuaian','diindikasikan','positioning','system','tracker','rincian','KKPR-nya','pengendalian','menaati','sanksi','administratif','perundang-undangan'],custom:[]}});
+assert.deepEqual(response.unknown,[]);
+for(const [a,b] of [['pengedalian','pengendalian'],['yarng','yang'],['Sanski','Sanksi'],['Administratrif','Administratif'],['mentaati','menaati'],['sebaimana','sebagaimana'],['administatif','administratif'],['administrastif','administratif'],['peraturan-perundang-undangan','peraturan perundang-undangan'],['perundangan-undangan','perundang-undangan']])assert.ok(SPELLING_CORRECTIONS.some(p=>p[0]===a&&p[1]===b));
+console.log('PASS: legal terms and spelling corrections 30 October 2026.');
+
+assert.ok(SPELLING_CORRECTIONS.some(p=>p[0]==='KKPRnya'&&p[1]==='KKPR-nya'));

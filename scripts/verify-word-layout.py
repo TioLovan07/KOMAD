@@ -23,7 +23,7 @@ with ZipFile(sys.argv[1]) as archive:
                    if any(b.get("{"+W+"}name")=="komad_first_page_spacer" for b in p.findall("w:bookmarkStart",ns))),None)
     assert spacer is not None, "Missing first-page body spacer"
     spacing=spacer.find("w:pPr/w:spacing",ns)
-    assert spacing.get("{"+W+"}line")=="3118", "Unexpected first-page reserved height"
+    assert int(spacing.get("{"+W+"}line"))+int(spacing.get("{"+W+"}after","0"))==3118, "Unexpected first-page reserved height"
     assert spacing.get("{"+W+"}lineRule")=="exact"
     assert not "".join(t.text or "" for t in spacer.findall(".//w:t",ns)).strip(), "Spacer must not add document text"
     first_text=next(p for p in doc.findall(".//w:body//w:p",ns)

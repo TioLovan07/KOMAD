@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "KOMAD \u2014 Konversi Matriks Menjadi Draft",
-  "short_name": "KOMAD",
+  "name": "KOMAD Eksperimen",
+  "short_name": "KOMAD Uji",
   "description": "Susun draft Word dari matriks harmonisasi.",
   "lang": "id",
   "start_url": "./?source=app",

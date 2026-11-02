@@ -1,3 +1,4 @@
+import {keepInstruction} from '../docs/js/control-text.js';
 import vm from 'node:vm';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
@@ -33,6 +34,7 @@ const e = (n, t = '', cs = [], a = {}) => new Element(n, t, cs, a),
     val = (n, k = 'val') => n?.attrs[k],
     norm = s => s.replace(/\s+/g, ' ').trim();
 const ctx = {
+    keepInstruction,
     W,
     direct,
     nodes,

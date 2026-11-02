@@ -1,3 +1,4 @@
+import {keepInstruction} from './control-text.js';
 import {configureFirstPage, positionGaruda} from './page-layout.js';
 /**
  * Pembentukan Word memakai profil contoh final. Pemeriksaan teks menghentikan ekspor jika isi tidak cocok.
@@ -127,6 +128,7 @@ async function buildWord({
 } = {}) {
     if (!allowPending && pending().length) throw Error('Tentukan pilihan untuk semua catatan terlebih dahulu.');
     const selectedRows = effectiveRows();
+    if(selectedRows.some(row=>row.ps.some(p=>keepInstruction(p)))) throw Error('Unduhan dihentikan: petunjuk Tetap/Tetsp belum berubah menjadi rumusan yang pasti.');
     const isAnnex = row => row.label.toLowerCase() === 'lampiran';
     // Lampiran selalu berada sesudah pengundangan, walau baris matriks berbeda urutan.
     const annexRows = selectedRows.filter(isAnnex);
@@ -205,6 +207,7 @@ async function buildWord({
         jointApproval = false,
         annexHeading = true;
     let annexCount = 0;
+    let explanationHeading = false;
 
     // Potret F4 mengikuti halaman utama; lebar tabel dihitung dari margin aktual.
     const portraitSection = () => fromProfile(d, DRAFT_FORMAT.sections[0]);
@@ -326,7 +329,7 @@ async function buildWord({
                 val: extra.align || 'left'
             });
         }
-        if (extra.listLevel) {
+        if (Number.isInteger(extra.listLevel)) {
             const left = 3119 + 567 * extra.listLevel;
             property(pr, 'ind', {
                 left,
@@ -336,6 +339,15 @@ async function buildWord({
                 val: 'left',
                 pos: left
             }));
+        }
+        if(extra.outline) {
+            property(pr,'ind',{left:5103,hanging:1984,right:0});
+            const tabs=property(pr,'tabs',{});tabs.appendChild(we(d,'tab',{val:'left',pos:4819}));tabs.appendChild(we(d,'tab',{val:'left',pos:5103}));
+            property(pr,'jc',{val:'left'});
+        }
+        if(Number.isInteger(extra.continuationLevel)) {
+            property(pr,'ind',{left:3119+567*extra.continuationLevel,right:0,firstLine:0});
+            property(pr,'spacing',{before:0,after:0,line:240,lineRule:'auto'});
         }
         matrixInlineDrawings(p);
         property(pr, 'suppressAutoHyphens', {
@@ -446,6 +458,7 @@ async function buildWord({
             row.sourceAnnexHeaderEnd=topicIndex>=0 ? topicIndex + (norm(row.ps[topicIndex].text)==='TENTANG' ? 1 : 0) : Math.min(4,row.ps.length-1);
             startAnnex(row.sourceAnnexHeading);
         }
+        if(row.sectionKind==='explanation') {signatureStage='';jointApproval=false;inTop=false;explanationHeading=true;}
         const groupWidths = row.prefix === 'Menetapkan' ? [2268, 284, 7371] : [2268, 284, 567, 6804];
         if (row.prefix) inTop = false;
         for (let blockIndex = 0; blockIndex < row.ps.length; blockIndex++) {
@@ -454,6 +467,7 @@ async function buildWord({
             anchorCount = 0;
             const t = norm(item.text),
                 isDrawing = nodes(item.node, 'drawing').length > 0;
+            if(/^BAB\s+[IVXLCDM]+[.]?\s*\t\s*:\s*\t/.test(item.text))item.inlineStructure=true;
             if (annexStarted && /^LAMPIRAN(?:\s+[IVXLCDM]+|\s+\d+)?$/i.test(t)) {
                 row.sourceAnnexHeading = true;
                 const remaining = row.ps.slice(blockIndex);
@@ -564,7 +578,7 @@ async function buildWord({
             } else if (/^MEMUTUSKAN\s*:$/i.test(t)) {
                 inTop = false;
                 role = 'decide';
-            } else if (/^BAB\s+[IVXLCDM]+[A-Z]?$/i.test(t)) {
+            } else if (!item.inlineStructure && /^BAB\s+(?:[IVXLCDM]+[A-Z]?|\d+)$/i.test(t)) {
                 inTop = false;
                 chapterTitleNext = 1;
                 definitions = false;
@@ -574,11 +588,12 @@ async function buildWord({
                 role = 'chapterTitle';
                 chapterTitleNext = 2;
                 extra.before = 0;
-            } else if (/^Bagian\s+\S+$/i.test(t)) {
+            } else if (/^(?:Bagian\s+\S+|Paragraf\s+\d+[A-Za-z]?)$/i.test(t)) {
                 role = 'article';
                 sectionTitleNext = true;
-            } else if (sectionTitleNext) {
+            } else if (sectionTitleNext && !item.list && !/^(?:Pasal|BAB|Bagian|Paragraf|Lampiran)\b/i.test(t)) {
                 role = 'chapterTitle';
+                extra.before = 0;
                 sectionTitleNext = false;
             } else if (/^Pasal\s+(?:\d+[A-Za-z]?|[IVXLCDM]+)$/i.test(t)) {
                 inTop = false;
@@ -588,7 +603,7 @@ async function buildWord({
             } else if (/yang dimaksud dengan\s*:\s*$/i.test(t)) {
                 definitions = true;
                 role = 'definitionLead';
-            } else if (annexStarted && !annexHeading && /^(?:B\s+)?BUPATI\b/.test(t)) {
+            } else if (annexStarted && !annexHeading && /^(?:B\s+)?(?:BUPATI|WALI\s*KOTA|GUBERNUR)\b/.test(t)) {
                 signatureStage = 'annex';
                 role = 'annex';
                 extra.before = 240;
@@ -605,7 +620,7 @@ async function buildWord({
                 signatureStage = '';
                 role = 'gazette';
             } else if (signatureStage === 'set') {
-                role = /^pada tanggal/i.test(t) ? 'signature' : /^BUPATI\b/.test(t) ? 'signatureRole' : 'signatureName';
+                role = /^pada tanggal/i.test(t) ? 'signature' : /^(?:BUPATI|WALI\s*KOTA|GUBERNUR)\b/.test(t) ? 'signatureRole' : 'signatureName';
             } else if (signatureStage === 'promulgate') {
                 role = /^[.\s…]+$/.test(t) ? 'promulgationName' : 'promulgation';
                 extra.before = /^pada tanggal/i.test(t) ? 0 : 240;
@@ -621,12 +636,17 @@ async function buildWord({
                 role = 'top';
                 if (/^RANCANGAN$/.test(t)) extra.before = 240;
                 else if (/^PERATURAN\b/.test(t)) extra.before = previous === 'RANCANGAN' ? 0 : 240;
-                else if (/^(TENTANG|DENGAN RAHMAT)\b/.test(t) || /^BUPATI\s.*,\s*$/.test(t) || previous === 'TENTANG') extra.before = 240;
+                else if (/^(TENTANG|DENGAN RAHMAT)\b/.test(t) || /^(?:BUPATI|WALI\s*KOTA|GUBERNUR)\s.*,\s*$/.test(t) || previous === 'TENTANG') extra.before = 240;
             } else if (item.list) {
                 role = definitions ? 'definition' : 'list';
                 extra.before = 0;
             }
             if (!['chapter','chapterTitle'].includes(role)) chapterTitleNext = false;
+            if (sectionTitleNext && !/^(?:Bagian\s+\S+|Paragraf\s+\d+[A-Za-z]?)$/i.test(t)) sectionTitleNext = false;
+            if(row.sectionKind==='explanation' && explanationHeading) {
+                if(/^(?:I[.)]?\s*)?UMUM$/i.test(t)) explanationHeading=false;
+                else {role='top';extra.before=/^PENJELASAN$/i.test(t)?0:/^TENTANG$/i.test(t)?240:0;}
+            }
             if (role === 'signatureName') {
                 role = 'signature';
                 extra.before = 960;
@@ -644,11 +664,14 @@ async function buildWord({
                 extra.prefix = item.list.marker + '\t';
                 extra.removeNum = true;
                 if (item.list.kind === 'ayat') inAyat = true;
-                extra.listLevel = item.list.kind === 'letter' && inAyat ? 1 : 0;
+                extra.listLevel = item.layoutLevel ?? (item.list.kind === 'letter' && inAyat ? 1 : 0);
             }
+            if(item.inlineStructure) {role='body';extra.before=0;extra.outline=/^BAB\s+[IVXLCDM]+[.]?\s*\t\s*:\s*\t/.test(item.text);}
+            else if(role==='body'&&Number.isInteger(item.continuationLevel))extra.continuationLevel=item.continuationLevel;
             if (item.amendmentInstruction) { extra.before = 240; inAyat = false; }
             if (role === 'body' && /^Pasal\s+(?:\d+[A-Za-z]?|[IVXLCDM]+)$/i.test(previous)) extra.before = 0;
             const p = addParagraph(source, role, extra);
+            if(row.sectionKind==='explanation'&&/^PENJELASAN$/i.test(t)) {property(direct(p,'pPr')[0],'pageBreakBefore',{val:1});orderPPr(direct(p,'pPr')[0]);}
             if (annexStarted && /^LAMPIRAN(?:\s+[IVXLCDM]+|\s+\d+)?$/i.test(t)) {
                 if (annexCount++) {
                     property(direct(p,'pPr')[0], 'pageBreakBefore', {val:1});

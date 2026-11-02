@@ -1,0 +1,45 @@
+import assert from 'node:assert/strict';
+import {experimentalSelect} from '../docs/js/merge-rumusan.js';
+const p=(text,marker,kind='ayat')=>({text,node:{cloneNode(){return this;}},...(marker?{list:{marker,kind}}:{})});
+const merge=(left,right,prefix)=>{const m={issues:[],decisions:[]};return {result:experimentalSelect(left,right,{m,rowIndex:7,prefix}),issues:m.issues};};
+let left=[p('Undang-Undang A','1.','number'),p('Undang-Undang B','2.','number'),p('Undang-Undang C','3.','number')];
+let a=merge(left,[p('Undang-Undang C baru','3.','number')],'Mengingat');
+assert.deepEqual(a.result.ps.map(p=>p.text),['Undang-Undang A','Undang-Undang B','Undang-Undang C baru']);
+assert.equal(merge(left,[p('A baru','1.','number'),p('B baru','2.','number')],'Mengingat').result,null,'A complete replacement beginning at 1 stays with stable selector');
+left=[p('Pasal 16'),p('Permohonan disampaikan tertulis','(1)'),p('Permohonan diajukan keluarga','(2)'),p('Pemerintah Daerah melakukan pemeriksaan kelengkapan persyaratan sebagaimana dimaksud dalam Pasal 10 dan Pasal 11 paling lama 3 Hari setelah menerima berkas permohonan Bantuan Hukum.','(3)'),p('Pasal 17'),p('Ketentuan lebih lanjut diatur dalam Peraturan Walikota.')];
+a=merge(left,[p('Tetap'),p('Pemerintah Daerah melakukan pemeriksaan kelengkapan persyaratan sebagaimana dimaksud dalam Pasal 14 dan Pasal 15 paling lama 3 Hari setelah menerima berkas permohonan Bantuan Hukum.','(3)'),p('Tetap')]);
+assert.equal(a.issues.filter(i=>i.hard).length,0);
+assert.equal(a.result.ps.length,left.length);
+assert.match(a.result.ps[3].text,/Pasal 14 dan Pasal 15/);
+assert.equal(a.result.ps[1].text,left[1].text);assert.equal(a.result.ps[5].text,left[5].text);
+assert.ok(!a.result.ps.some(p=>p.text==='Tetap'));
+// Same ordinal in two articles is not enough to choose a target.
+a=merge([p('Pasal 1'),p('Ketentuan ini berlaku untuk kelompok pertama.','(3)'),p('Pasal 2'),p('Ketentuan ini berlaku untuk kelompok kedua.','(3)')],[p('Tetap'),p('Rumusan baru yang tidak mempunyai pasangan jelas.','(3)')]);
+assert.ok(a.issues.some(i=>i.hard));
+// An entire ayat includes its subordinate letters: replacing it must not duplicate old letters.
+a=merge([p('Pasal 1'),p('Jenis kegiatan meliputi:','(1)'),p('lama a','a.','letter'),p('lama b','b.','letter'),p('Isi ayat dua','(2)'),p('Pasal 2'),p('Isi lainnya')],[p('Pasal 1'),p('Jenis kegiatan baru meliputi:','(1)'),p('baru a','a.','letter'),p('Tetap')]);
+assert.deepEqual(a.result.ps.map(p=>p.text),['Pasal 1','Jenis kegiatan baru meliputi:','baru a','Isi ayat dua','Pasal 2','Isi lainnya']);
+console.log('PASS: partial preamble, multi-article ayat, ambiguity blocking, Tetap exclusion and replacement of whole list subtrees.');
+a=merge([p('Pasal 4'),p('Isi ayat pertama','(1)'),p('Isi ayat kedua','(2)')],[p('Pasal 5')]);
+assert.deepEqual(a.result.ps.map(p=>p.text),['Pasal 5','Isi ayat pertama','Isi ayat kedua']);
+a=merge([p('Pasal 1'),p('Kegiatan meliputi jenis pelayanan berikut:','(1)'),p('lama a','a.','letter'),p('lama b','b.','letter'),p('Ayat kedua','(2)')],[p('Pasal 1'),p('Kegiatan meliputi jenis pelayanan berikut:','(1)'),p('baru a','a.','letter')]);
+assert.deepEqual(a.result.ps.map(p=>p.text),['Pasal 1','Kegiatan meliputi jenis pelayanan berikut:','baru a','lama b','Ayat kedua']);
+console.log('PASS: heading-only replacements and nested partial letters retain unmodified body.');
+
+const table=p('a. Batas timur; b. Batas utara; c. Batas selatan; d. Batas barat;','a.','letter');
+table.node={localName:'tbl',cloneNode(){return this;}};
+a=merge([p('Pasal 2'),p('Batas wilayah:'),p('Timur','a.','letter'),p('Utara','b.','letter'),p('Selatan','c.','letter'),p('Barat','d.','letter')],[p('Pasal 2'),p('Batas wilayah:'),table]);
+assert.equal(a.result,null,'A complete nested table must not be mistaken for a single partial letter');
+console.log('PASS: complete nested boundary table stays with stable selection; no duplicated boundaries.');
+const hiddenBody=[p('Isi awal satu','(1)'),p('Isi awal dua','(2)')].map(p=>({...p,sourceArticle:'4'}));
+a=merge(hiddenBody,[p('Pasal 5'),p('Isi awal satu diperbaiki','(1)')]);
+assert.deepEqual(a.result.ps.map(p=>p.text),['Pasal 5','Isi awal satu diperbaiki','Isi awal dua']);
+a=merge([p('Pasal 2'),p('Jenis konflik terdiri dari:','(1)'),p('Konflik aktual','a.','letter')],[p('Pasal 2'),p('Rumusan baru pasal dua'),p('Pasal 3'),p('Rumusan baru pasal tiga'),p('Pasal 4')]);
+assert.deepEqual(a.result.ps.map(p=>p.text),['Pasal 2','Rumusan baru pasal dua','Pasal 3','Rumusan baru pasal tiga','Pasal 4','Jenis konflik terdiri dari:','Konflik aktual']);
+console.log('PASS: struck source titles and a new final title preserve the uniquely scoped initial body.');
+a=merge([p('Pasal 1'),p('Kegiatan meliputi jenis pelayanan berikut:','(1)'),p('rincian a','a.','letter'),p('rincian b','b.','letter'),p('Ayat lain','(2)')],[p('Pasal 1'),p('Kegiatan meliputi jenis pelayanan berikut:','(1)')]);
+assert.deepEqual(a.result.ps.map(p=>p.text),['Pasal 1','Kegiatan meliputi jenis pelayanan berikut:','rincian a','rincian b','Ayat lain']);
+console.log('PASS: reprinted lead-in without its children does not silently delete the old details.');
+a=merge([p('Pasal 13'),p('Bentuk pengendalian oleh Atasan sebagaimana dimaksud dalam diantaranya meliputi:','(1)'),p('ketentuan a','a.','letter'),p('ketentuan b','b.','letter'),p('Isi lain','(2)')],[p('Pasal 16'),p('Bentuk pengendalian oleh Atasan sebagaimana dimaksud dalam Pasal 15 ayat (4) diantaranya meliputi:','(1)')]);
+assert.equal(a.result.ps.filter(p=>p.list?.kind==='letter').length,2);
+console.log('PASS: adding a cross-reference to a lead-in preserves its omitted children.');

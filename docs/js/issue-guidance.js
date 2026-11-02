@@ -1,0 +1,17 @@
+/** Plain-language explanations shared by cards, preview and hover tooltips. */
+export function issueGuidance(issue) {
+ const problem=issue.message||issue.title;
+ if(issue.action)return {problem,action:issue.action};
+ if(issue.kind==='correction')return {problem:'Teks “'+issue.word+'” mempunyai rekomendasi “'+(issue.replacement||'belum dipilih')+'”. Ini perlu dinilai dalam konteks kalimat.',action:'Jika rekomendasi benar, pilih Terapkan Rekomendasi. Jika istilah sumber memang benar, pilih Biarkan Sesuai Matriks.'};
+ if(issue.kind==='source-gap')return {problem,action:'Bandingkan rumusan awal yang ditampilkan dengan hasil penyempurnaan. Pilih Gunakan Lanjutan Awal jika bagian itu masih berlaku; pilih Hasil Sudah Sesuai hanya jika penghilangan memang dimaksudkan.'};
+ if(issue.kind==='editorial')return {problem,action:'Tentukan apakah kalimat yang disorot merupakan petunjuk penyunting atau isi peraturan. Keluarkan jika hanya catatan; pertahankan jika merupakan rumusan yang disepakati.'};
+ if(issue.kind==='advisory')return {problem,action:'Periksa nomor, tahun, tanggal atau nama pada setiap tempat isian. Lengkapi pada sumber atau Word akhir; pilih Lengkapi Nanti jika nilainya memang belum tersedia.'};
+ if(issue.kind==='annex')return {problem,action:'Bandingkan judul hasil dengan tabel lampiran awal. Gunakan isi awal hanya jika tabel tersebut masih berlaku; jika belum pasti, lengkapi lampiran setelah keputusan perancang.'};
+ if(/Periksa hasil pembacaan DOC/.test(issue.title))return {problem,action:'Bandingkan gambar, nomor otomatis dan tabel pada draft dengan file Word asli. Jika ada unsur yang hilang atau berbeda, simpan sumber sebagai DOCX dan unggah ulang. Ini pemeriksaan format dokumen, bukan kesalahan pada setiap paragraf.'};
+ if(/tambahan dan perubahan nomor/.test(issue.title))return {problem,action:'Periksa satu per satu pasangan pasal awal dan hasil yang disebutkan. Pastikan pasal tambahan berada pada BAB yang tepat dan isi pasal yang bergeser tetap lengkap. Konfirmasikan hanya jika pemetaan itu sesuai keputusan perancang.'};
+ if(/muncul lebih dari sekali/.test(issue.title))return {problem,action:'Bandingkan materi pada kedua judul pasal yang sama. Perancang perlu menentukan nomor atau rumusan yang benar, lalu memperbaiki sumber dan mengunggah ulang. Aplikasi tidak memilih pasal yang dihapus.'};
+ if(/Materi di luar matriks/.test(issue.title))return {problem,action:'Periksa tabel setelah matriks utama pada file sumber. Pastikan lampiran atau lanjutan tersebut dimasukkan ke Word akhir; tampilan pasal utama tidak membuktikan lampiran sudah lengkap.'};
+ if(/Petunjuk pada baris/.test(issue.title))return {problem:'Kolom keterangan memuat instruksi yang perlu dicocokkan dengan draft: '+problem,action:'Periksa apakah instruksi pada keterangan sudah terlaksana pada pasal tujuan, termasuk penghapusan atau pemindahan yang disebutkan. Jika belum, perjelas sumber dan unggah ulang; jika sudah, pilih Sudah Saya Periksa.'};
+ if(issue.hard)return {problem,action:'Tentukan sasaran atau rumusan yang belum pasti sebagaimana disebutkan di atas. Perjelas bagian tersebut pada matriks lalu unggah ulang. Catatan ini belum dapat dilewati karena berisiko salah isi.'};
+ return {problem,action:'Bandingkan temuan yang dijelaskan di atas dengan kolom awal, hasil dan keterangan. Pastikan perubahan atau bagian yang dipertahankan sesuai keputusan perancang; jika sesuai, pilih Sudah Saya Periksa. Jika belum sesuai, perbaiki sumber dan unggah ulang.'};
+}

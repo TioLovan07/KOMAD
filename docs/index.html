@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-build="20261102.3">
  <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width,initial-scale=1" name="viewport"/>
@@ -22,6 +22,7 @@
   </script>
  </head>
  <body>
+  <div id="update-banner" hidden="" role="status" class="panel">Pembaruan KOMAD tersedia. Simpan pekerjaan sebelum memperbarui. <button id="show-update">Lihat pembaruan</button></div>
   <a class="sr-only" href="#workspace">
    Langsung ke ruang kerja
   </a>
@@ -78,7 +79,7 @@
        <p id="offline-detail">
        </p>
        <p id="app-version">
-        Versi 1.3.2
+        Versi 1.3.3 · Build 20261102.3
        </p>
        <button id="install-app">
         Pasang aplikasi
@@ -115,7 +116,7 @@
        Penyusunan draft peraturan
       </span>
       <span class="preview-label">
-       Versi 1.3.2
+       Versi 1.3.3 · Build 20261102.3
       </span>
      </div>
      <div class="top-actions">
@@ -171,7 +172,7 @@
          draft peraturan.
         </h1>
         <p class="muted">
-         Pilih matriks hasil harmonisasi, periksa bagian yang ditandai, lalu unduh draft Word.
+         Pilih matriks hasil harmonisasi, periksa bagian yang ditandai dan kelengkapan isinya, lalu unduh draft Word.
         </p>
        </div>
       </div>
@@ -190,13 +191,13 @@
          <p>
           Gunakan dokumen Word berformat
           <strong>
-           .docx
+           .docx atau .doc 97–2003
           </strong>
          </p>
          <button class="primary" id="pick">
           Pilih File Matriks Word
          </button>
-         <input accept=".docx" hidden="" id="file" type="file"/>
+         <input accept=".doc,.docx" hidden="" id="file" type="file"/>
          <div class="file-hint">
           Dokumen asli tetap tersimpan tanpa perubahan.
          </div>
@@ -377,6 +378,7 @@
          <p class="viewer-hint" id="viewer-status" role="status">
           Pilih catatan untuk menyorot bagian terkait.
          </p>
+          <div id="issue-explanation" class="issue-explanation" hidden=""></div>
          <div class="document-host" id="document">
           <iframe id="draft-frame" src="viewer.html" title="Pratinjau seluruh halaman draft Word">
           </iframe>
@@ -450,7 +452,7 @@
       KOMAD · Ruang kerja perancang
      </span>
      <span>
-      Versi 1.3.2
+      Versi 1.3.3 · Build 20261102.3
      </span>
     </footer>
    </main>
@@ -475,7 +477,7 @@
      <p>
       Gunakan file
       <strong>
-       .docx
+       .docx atau .doc 97–2003
       </strong>
       dengan kolom rumusan awal dan hasil penyempurnaan. Kolom keterangan dapat berisi petunjuk yang perlu diperhatikan.
      </p>

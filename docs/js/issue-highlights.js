@@ -1,3 +1,4 @@
+import {issueGuidance} from './issue-guidance.js';
 /** Sorotan hanya hidup di iframe pratinjau; tidak dimasukkan ke file Word. */
 import {
     $
@@ -14,6 +15,15 @@ export function highlightIssue(issue, scroll = false, locationIndex = null) {
     const viewer = $('draft-frame')?.contentWindow;
     if (!viewer?.highlightDraft) return 0;
     viewer.clearDraftHighlights();
+    const explanation=$('issue-explanation');
+    if(explanation) {
+        explanation.hidden=!issue;
+        if(issue) {
+            const g=issueGuidance(issue);
+            const brief=(text,limit)=>text.length>limit?text.slice(0,limit)+'… (rincian lengkap pada kartu catatan)':text;
+            explanation.textContent=issue.title+'\nMasalah: '+brief(g.problem,320)+'\nTindakan: '+brief(g.action,360);
+        } else explanation.textContent='';
+    }
     if (!issue || !model) return 0;
     const rows = effectiveRows();
     const targets = [];
@@ -43,7 +53,7 @@ export function highlightIssue(issue, scroll = false, locationIndex = null) {
             anchor: 'p3h_' + location.rowIndex + '_' + location.blockIndex,
             text: source,
             ranges,
-            tooltip: location.label + ' — ' + issue.title + '. ' + issue.message
+            tooltip: location.label + ' — ' + issue.title + '. Masalah: ' + issueGuidance(issue).problem + ' Tindakan: ' + issueGuidance(issue).action
         });
     }
     return viewer.highlightDraft(targets, scroll);

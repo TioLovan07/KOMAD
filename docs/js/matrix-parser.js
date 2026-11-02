@@ -1,3 +1,11 @@
+import {keepInstruction} from './control-text.js';
+import {isAnnexInput,annexTitles} from './annex-titles.js';
+import {documentMetadata} from './document-layout.js';
+import {selectEnactment} from './enactment.js';
+import {selectStructurePlan} from './structure-plan.js';
+import {annotateLists} from './list-layout.js';
+import {prepareWordFile} from './legacy-import.js';
+import {experimentalSelect} from './merge-rumusan.js';
 import { missingSourceBlocks } from './source-coverage.js';
 import { missingArticles } from './article-integrity.js';
 import { replacementMatches } from './draft-model.js';
@@ -11,6 +19,7 @@ import {
  */
 import {
     $,
+    we,
     nodes,
     direct,
     norm,
@@ -35,7 +44,9 @@ import {
     attachIssueLocations
 } from './issue-locations.js';
 async function readMatrix(file) {
-    if (!/\.docx$/i.test(file.name)) throw Error('Pilih file Word berformat .docx.');
+    const originalName=file.name;
+    const imported=await prepareWordFile(file);
+    file=imported.file;
     if (file.size > 20 * 1024 * 1024) throw Error('Ukuran file melebihi 20 MB.');
     const z = await JSZip.loadAsync(file);
     let total = 0;
@@ -67,15 +78,21 @@ async function readMatrix(file) {
     const m = {
         zip: z,
         doc: d,
-        name: file.name,
+        name: originalName,
         rows: [],
         issues: [],
         decisions: [],
         filename: 'Draft.docx'
     };
+    if(imported.legacy) {
+        m.legacyImport={recoveredRows:imported.recoveredRows,images:imported.images};
+        if(imported.skippedAnnex)m.decisions.push('Pembacaan DOC berhenti sesudah baris judul lampiran yang berada setelah penutup matriks. Isi lampiran tidak disalin; halaman portrait berjudul disiapkan sesuai ruang lingkup aplikasi.');
+        m.decisions.push('DOC 97–2003 dibaca secara lokal; struktur tabel dan run teks diteruskan ke pembaca yang sama.');
+        addIssue(m,{kind:'review',title:'Periksa hasil pembacaan DOC 97–2003',message:'Teks, daftar, dan tabel DOC dibaca di perangkat. Gambar WMF/EMF, bentuk, dan layout lampiran tertentu belum didukung. Periksa juga penomoran otomatis dan bandingkan sumber; gunakan .docx jika unsur tersebut diperlukan.'});
+    }
     if (tables.length > 1) addIssue(m, {
-        title: 'Ada lebih dari satu tabel',
-        message: 'Tabel lain di luar matriks utama perlu diperiksa untuk memastikan tidak ada lanjutan naskah.',
+        title: 'Materi di luar matriks utama belum digabungkan',
+        message: (tables.length-1)+' tabel di luar matriks utama belum dimasukkan otomatis. Tabel tersebut dapat berisi lampiran atau lanjutan naskah. Bandingkan sumber dan gabungkan di Word jika diperlukan; jangan menganggap draft sudah mencakup seluruh lampiran.',
         kind: 'review'
     });
     if (nodes(d, 'ins').length || nodes(d, 'del').length) addIssue(m, {
@@ -100,13 +117,46 @@ async function readMatrix(file) {
             right = matrixParagraphs(rc, catalog, rightState),
             note = cols.ket >= 0 && cs[cols.ket] ? norm(textOf(cs[cols.ket])) : '',
             labels = matrixRowLabel(cs, Math.min(cols.awal, cols.hasil));
-        const selected = matrixSelectRumusan(left, right, {
+        const selectionOptions = {m,rowIndex:i+1,prefix:labels.prefix,note};
+        const annexInput=isAnnexInput(labels.label,left,right);
+        if(!annexInput && right.some(p=>keepInstruction(p)?.kind==='confirm-keep')) addIssue(m,{
+            kind:'review',rowIndex:i+1,title:'Konfirmasi petunjuk Tetsp pada baris '+(i+1),
+            message:'Kolom hasil memuat Tetsp, yang diduga berarti Tetap. Petunjuk tidak dicetak. Isi awal digunakan pada cakupan yang dapat dipastikan; pastikan maksud petunjuk sebelum menyetujui.'
+        });
+        const keepOnly=!annexInput && right.length>0 && right.every(p=>keepInstruction(p));
+        if(keepOnly&&!left.length) addIssue(m,{kind:'review',hard:true,rowIndex:i+1,
+            title:'Petunjuk Tetap tidak memiliki isi awal pada baris '+(i+1),
+            message:'Hasil hanya memuat petunjuk Tetap/Tetsp, tetapi rumusan awal kosong. Sediakan rumusan yang harus dipertahankan; aplikasi tidak mengarang isi.'});
+
+        const annexAmendment=left.some(p=>/^Pasal I$/i.test(norm(p.text))) && right.length===2 && /^Pasal I$/i.test(norm(right[0].text)) && /^Lampiran\s+Peraturan\b/i.test(norm(right[1].text)) && /diubah.*sebagaimana.*Lampiran/i.test(norm(right[1].text));
+        if(annexAmendment)addIssue(m,{kind:'review',rowIndex:i+1,title:'Konfirmasi penggantian rumusan Pasal I',message:'Kolom hasil mengganti rumusan Pasal I menjadi perubahan lampiran. Rincian Pasal 14 dari kolom awal tidak dicetak karena tidak ditulis lagi pada rumusan pengganti. Pastikan keputusan perubahan lampiran ini sesuai hasil harmonisasi.',action:'Bandingkan seluruh rumusan Pasal I pada kolom hasil dengan draft. Konfirmasikan penggantian cakupannya; jangan mengembalikan Pasal 14 lama jika memang diganti oleh rumusan hasil.'});
+        const selected = annexAmendment ? {ps:right.map(matrixCloneBlock),useRight:true,rule:'Rumusan Pasal I hasil yang khusus mengubah lampiran digunakan seluruhnya.'} : annexInput ? {ps:annexTitles(left,right,documentMetadata(m.rows),labels.label).flatMap(lines=>lines.map(text=>{const node=we(d,'p'),r=we(d,'r'),t=we(d,'t');t.textContent=text;r.appendChild(t);node.appendChild(r);return {node,text,list:null};})),useRight:false,rule:'Lampiran hanya berupa halaman portrait dengan judul; isi sumber tidak disalin.'} : keepOnly ? {ps:left.map(matrixCloneBlock),useRight:false,rule:'Hasil hanya memuat petunjuk Tetap/Tetsp; seluruh rumusan awal pada baris dipertahankan.'} : selectEnactment(left,right,selectionOptions) || selectStructurePlan(left,right,selectionOptions,experimentalSelect) || experimentalSelect(left,right,selectionOptions) || matrixSelectRumusan(left, right, {
             m,
             rowIndex: i + 1,
             prefix: labels.prefix
         });
+        // Preserve a picture-only emblem in the opening identity row when the
+        // result repeats the identity text but omits its illustration. No body images
+        // or text are copied, and explicit removal instructions are respected.
+        const hasPicture = p => nodes(p.node,'drawing').length || nodes(p.node,'pict').length;
+        if (!m.rows.length && selected.useRight &&
+            selected.ps.some(p=>/^(?:BUPATI|WALI\s*KOTA|GUBERNUR)\b/i.test(norm(p.text))) &&
+            !selected.ps.some(hasPicture) && !(/\b(?:hapus|dihapus|hilangkan|tanpa)\b/i.test(note) && /\b(?:gambar|lambang|garuda)\b/i.test(note))) {
+            const openingPictures=left.slice(0,left.findIndex(p=>p.text.trim())).filter(p=>!p.text.trim()&&hasPicture(p));
+            if(openingPictures.length===1) {
+                selected.ps.unshift(matrixCloneBlock(openingPictures[0]));
+                m.decisions.push('Gambar pembuka dari kolom awal dipertahankan; teks identitas mengikuti hasil penyempurnaan.');
+            }
+        }
+        // Some templates place the decision heading in a label cell of its own.
+        if(/MEMUTUSKAN\s*:/i.test(labels.label) &&
+            ![...m.rows.flatMap(r=>r.ps),...selected.ps].some(p=>/^MEMUTUSKAN\s*:/i.test(norm(p.text)))) {
+            const node=we(d,'p'),run=we(d,'r'),text=we(d,'t');text.textContent='MEMUTUSKAN:';run.appendChild(text);node.appendChild(run);
+            selected.ps.unshift({node,text:'MEMUTUSKAN:',list:null});
+        }
         const row = {
             index: i + 1,
+            structurePlan: !!selected.structurePlan,
             left,
             right,
             note,
@@ -115,10 +165,11 @@ async function readMatrix(file) {
             label: labels.label || ('Baris ' + (i + 1)),
             prefix: labels.prefix
         };
-        if (row.ps.some(p => /^LAMPIRAN\b/i.test(norm(p.text)))) row.label = 'Lampiran';
+        if (row.ps.some(p=>/^PENJELASAN$/i.test(norm(p.text)))) row.sectionKind='explanation';
+        if (annexInput) {row.label='Lampiran';row.note='';row.annexTitleOnly=true;}
         m.rows.push(row);
         m.decisions.push('Baris ' + row.index + ' · ' + selected.rule + (nodes(selected.useRight ? rc : lc, 'strike').length ? ' Teks dicoret dikeluarkan.' : ''));
-        if (row.label === 'Lampiran' && right.length && !right.some(p => p.node.localName === 'tbl') && left.some(p => p.node.localName === 'tbl')) {
+        if (!row.annexTitleOnly && row.label === 'Lampiran' && right.length && !right.some(p => p.node.localName === 'tbl') && left.some(p => p.node.localName === 'tbl')) {
             const start = left.findIndex((p, j) => j > 1 && p.text.trim());
             addIssue(m, {
                 kind: 'annex',
@@ -207,15 +258,25 @@ async function readMatrix(file) {
             hard: true
         });
     }
-    for (const {row, missing, resultTargets} of missingArticles(m.rows, articleSections)) {
+    for (const {row, missing, resultTargets} of missingArticles(m.rows.filter(row=>row.sectionKind!=='explanation'), articleSections)) {
         addIssue(m, {
             kind: 'review', row,
             title: resultTargets ? 'Konfirmasi perubahan sasaran pasal' : 'Periksa kelengkapan Pasal ' + missing.join(', '),
             message: resultTargets ? 'Pada baris ini, kolom awal membahas Pasal ' + missing.join(', ') + ', sedangkan kolom hasil membahas Pasal ' + resultTargets.join(', ') + '. Draft sudah mengikuti kolom hasil. Pastikan perubahan sasaran dan rumusannya memang disepakati, lalu pilih Sudah Saya Periksa. Catatan ini tidak menyatakan isi draft hilang.' : 'Nomor Pasal ini ada pada rancangan awal tetapi belum ditemukan di seluruh hasil terpilih. Periksa kemungkinan perubahan nomor, penghapusan, atau penyusunan ulang. Jika sudah sesuai, pilih Sudah Saya Periksa; jika belum, unggah matriks revisi. Aplikasi tidak menambah rumusan otomatis.'
         });
     }
+    for(const row of m.rows) for(const blocks of [row.left,row.ps]) {
+        let outline=false;
+        for(const p of blocks) {
+            if(/^Pasal\s+\d+/i.test(norm(p.text)))outline=false;
+            if(/sistematika\s+sebagai berikut\s*:/i.test(norm(p.text))) {outline=true;continue;}
+            if(outline&&p.list?.kind==='ayat')outline=false;
+            if(outline)p.inlineStructure=true;
+        }
+    }
     const seen = new Map();
     for (const row of m.rows) {
+        if(row.sectionKind==='explanation')continue;
         for (const sec of articleSections(row.ps)) {
             if (seen.has(sec.num)) addIssue(m, {
                 kind: 'review',
@@ -252,29 +313,6 @@ async function readMatrix(file) {
             title: 'Lampiran belum tersedia',
             message: 'Baris lampiran pada matriks kosong. Peta atau lampiran dari dokumen lain tidak disisipkan otomatis.'
         });
-    }
-    for (const row of m.rows) {
-        let section = row.label,
-            seenLetters = new Set();
-        for (const p of row.ps) {
-            if (/^Pasal\s+\d+/i.test(norm(p.text))) {
-                section = norm(p.text);
-                seenLetters.clear();
-            }
-            if (p.list?.kind === 'ayat') seenLetters.clear();
-            if (p.list?.kind === 'letter') {
-                const marker = p.list.marker;
-                if (seenLetters.has(marker)) addIssue(m, {
-                    kind: 'review',
-                    row,
-                    marker,
-                    section,
-                    title: 'Penanda ' + marker + ' berulang pada ' + section,
-                    message: 'Baris ' + row.index + ' memuat penanda butir yang sama lebih dari sekali. Penanda dipertahankan sesuai sumber; periksa penomoran pada matriks.'
-                });
-                seenLetters.add(marker);
-            }
-        }
     }
     for (const row of m.rows)
         if ([...row.left, ...row.right].some(p => /^B\s{3,}BUPATI\b/.test(p.text))) addIssue(m, {
@@ -326,6 +364,12 @@ async function readMatrix(file) {
         message: 'Nomor, tahun, tanggal, atau nama masih menggunakan titik/ellipsis. Nilainya perlu ditentukan perancang; tidak ada nilai pengganti yang dapat disarankan otomatis.'
     });
 
+    for(const row of m.rows) row.ps.forEach((p,blockIndex)=>{
+        if(keepInstruction(p))addIssue(m,{kind:'review',hard:true,row,rowIndex:row.index,blockIndex,
+            title:'Petunjuk belum terselesaikan pada baris '+row.index,
+            message:'Paragraf ini masih hanya berisi Tetap/Tetsp. Isi awal belum dipulihkan secara pasti. Unduhan ditahan; jangan menghapus petunjuk tanpa memulihkan rumusan yang dimaksud.'});
+    });
+    annotateLists(m);
     await checkSpelling(m);
     attachIssueLocations(m);
     return m;
