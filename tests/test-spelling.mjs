@@ -53,3 +53,8 @@ await self.onmessage({data:{words:['penatausahaan','Penatausahaan','Undang-Undan
 assert.deepEqual(response.unknown,[]);
 for(const [a,b] of [['Bagiam','Bagian'],['bagiam','bagian'],['Plaporan','Pelaporan'],['Monitorng','Monitoring'],['Perundangundangan','Perundang-undangan'],['bermaterai','bermeterai'],['kerkenaan','berkenaan'],['disetempel','distempel'],['besertajasa','beserta jasa'],['Akuntasi','Akuntansi']])assert.ok(SPELLING_CORRECTIONS.some(p=>p[0]===a&&p[1]===b));
 console.log('PASS: 1.3.4 accepted terms and explicit case-aware typo recommendations.');
+
+await self.onmessage({data:{words:['terukur','Reduce','Reuse','Recycle','pemilahan','pendauran','e-BK','website','terverifikasi','feasibility','study','appraisal','permusyawaratan','mempedomani','output','pemindahbukuan','dipersamakan','lumpsum','lumsum','force','majeure','tertuang','e-Hibah','Agrikultur'],custom:[]}});
+assert.deepEqual(response.unknown,[]);
+for(const [a,b] of [['isingkat','disingkat'],['documentformat','document format'],['merubah','mengubah'],['dirnaksud','dimaksud'],['perkegiatan','per kegiatan'],['nimimal','minimal'],['dipertanggungjawaban','dipertanggungjawabkan'],['Undang-Undang-Undang','Undang-Undang'],['dibidang','di bidang']])assert.ok(SPELLING_CORRECTIONS.some(p=>p[0]===a&&p[1]===b));
+console.log('PASS: added waste management, administration and foreign terms; nine new typo cases.');

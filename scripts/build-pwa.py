@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "docs"
 TEMPLATE = ROOT / "scripts" / "service-worker.template.js"
 RELEASE = "1.3.4"
-BUILD = "20261103.1"
+BUILD = "20261103.2"
 
 
 def main():

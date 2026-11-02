@@ -11,6 +11,7 @@ export const SPELLING_CORRECTIONS = [
 
 // Explicit corrections: wrong forms are never added as accepted dictionary entries.
 const additions = [
+ ['isingkat','disingkat'], ['documentformat','document format'], ['merubah','mengubah'], ['dirnaksud','dimaksud'], ['perkegiatan','per kegiatan'], ['nimimal','minimal'], ['dipertanggungjawaban','dipertanggungjawabkan'], ['dibidang','di bidang'], ['undang-undang-undang','undang-undang'], ['Undang-Undang-Undang','Undang-Undang'],
  ['adalan','adalah'], ['disngkat','disingkat'], ['disaingkat','disingkat'], ['meujudkan','mewujudkan'], ['dearah','daerah'], ['akuntasi','akuntansi'], ['diperuntukan','diperuntukkan'], ['sebagaiman','sebagaimana'], ['standarisasi','standardisasi'], ['meminimalisir','meminimalkan'], ['mengakomodir','mengakomodasi'],
  ['bagiam','bagian'], ['plaporan','pelaporan'], ['monitorng','monitoring'], ['perundangundangan','perundang-undangan'], ['bermaterai','bermeterai'], ['kerkenaan','berkenaan'], ['disetempel','distempel'], ['besertajasa','beserta jasa'],
  ['KKPRnya','KKPR-nya'], ['kkprnya','KKPR-nya'],
