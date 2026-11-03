@@ -50,14 +50,20 @@ html { overflow: hidden; }
 }
 
 #pages .draft-highlight {
-    background: #fff0b5;
-    color: #b64016;
+    background: transparent;
+    color: inherit;
+    outline: 2px solid #006bce;
+    box-shadow: 0 0 0 3px #fff;
+    text-decoration: underline dotted #006bce;
+    text-underline-offset: 3px;
     border-radius: 3px;
     font-weight: 400
 }
 
-#pages .draft-highlight:hover {
-    background: #ffdf7b
+#pages .draft-highlight:hover, #pages .draft-highlight:focus-visible {
+    background: #082f49 !important;
+    color: #fff !important;
+    outline-color: #38bdf8
 }
 
 #empty {
@@ -133,7 +139,7 @@ html { overflow: hidden; }
 }
 
 #pages .draft-highlight:focus {
-    outline: 2px solid #b77b16;
+    outline: 2px solid #38bdf8;
     outline-offset: 3px
 }
   </style>

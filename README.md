@@ -8,7 +8,7 @@
 
 Aplikasi web untuk membantu perancang peraturan mengolah matriks harmonisasi menjadi draft Word dengan format yang seragam. KOMAD membantu memindahkan rumusan, menelusuri bagian yang perlu diperiksa, dan mengurangi pekerjaan salin-tempel berulang.
 
-**[Buka aplikasi](https://tiolovan07.github.io/KOMAD/)** · [Panduan pemasangan dan pembaruan](PANDUAN_GITHUB.md) · [Catatan rilis](PEMBARUAN-1.3.4.md)
+**[Buka aplikasi](https://tiolovan07.github.io/KOMAD/)** · [Panduan pemasangan dan pembaruan](PANDUAN_GITHUB.md) · [Catatan rilis](PEMBARUAN-1.3.5.md)
 
 ## Fitur utama
 
@@ -16,6 +16,7 @@ Aplikasi web untuk membantu perancang peraturan mengolah matriks harmonisasi men
 - **Penyusunan rumusan** — mengolah hasil penyempurnaan, petunjuk “Tetap”, dan revisi sebagian yang sasarannya dapat dicocokkan dengan jelas.
 - **Pemeriksaan ejaan** — menampilkan dugaan typo dan rekomendasi dari kamus offline untuk dipilih pengguna.
 - **Catatan dengan lokasi** — menghubungkan bagian yang perlu diperiksa dengan sorotan pada pratinjau, disertai penjelasan dan tindakan.
+- **Warna sumber dipertahankan** — warna teks, sorotan dan arsiran rumusan terpilih tetap terlihat pada Word dan pratinjau.
 - **Draft dengan format seragam** — menata judul, Pasal, ayat, daftar, margin, serta halaman judul lampiran.
 - **Ekspor Word** — menghasilkan `Draft.docx` untuk pemeriksaan dan penyelesaian akhir.
 - **Penggunaan offline** — tersedia setelah seluruh aset aplikasi tersimpan dan status kesiapan offline terkonfirmasi.

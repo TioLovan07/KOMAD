@@ -58,7 +58,7 @@ function applyRunFormat(p) {
             rp = we(p.ownerDocument, 'rPr');
             r.insertBefore(rp, r.firstChild);
         }
-        for (const n of ['rStyle', 'highlight', 'shd', 'color', 'strike', 'dstrike', 'vanish', 'sz', 'szCs', 'rFonts', 'b', 'bCs', 'u', 'spacing', 'w', 'fitText']) direct(rp, n).forEach(x => x.remove());
+        for (const n of ['rStyle', 'strike', 'dstrike', 'vanish', 'sz', 'szCs', 'rFonts', 'b', 'bCs', 'u', 'spacing', 'w', 'fitText']) direct(rp, n).forEach(x => x.remove());
         property(rp, 'rFonts', {
             ascii: DRAFT_FORMAT.font,
             hAnsi: DRAFT_FORMAT.font,
@@ -71,9 +71,7 @@ function applyRunFormat(p) {
         property(rp, 'szCs', {
             val: DRAFT_FORMAT.size
         });
-        property(rp, 'color', {
-            val: '000000'
-        });
+        if (!direct(rp,'color').length) property(rp, 'color', {val:'000000'});
         property(rp, 'b', {
             val: 0
         });
@@ -87,6 +85,8 @@ function prefixText(p, text) {
     if (!text) return;
     const d = p.ownerDocument,
         r = we(d, 'r');
+    const first=nodes(p,'r').find(x=>nodes(x,'t').length),source=first&&direct(first,'rPr')[0];
+    if(source){const pr=we(d,'rPr');for(const n of ['color','highlight','shd'])for(const e of direct(source,n))pr.appendChild(e.cloneNode(true));r.appendChild(pr);}
     for (const part of text.split(/(\t|\n)/)) {
         if (part === '\t') r.appendChild(we(d, 'tab'));
         else if (part === '\n') r.appendChild(we(d, 'br'));
@@ -288,8 +288,10 @@ async function buildWord({
         for (const n of [...nodes(p, 'sectPr'), ...nodes(p, 'commentRangeStart'), ...nodes(p, 'commentRangeEnd'), ...nodes(p, 'commentReference'), ...nodes(p, 'bookmarkStart'), ...nodes(p, 'bookmarkEnd')]) n.remove();
         const oldPr = direct(p, 'pPr')[0],
             oldNum = oldPr && direct(oldPr, 'numPr')[0]?.cloneNode(true);
+        const sourceShading=oldPr&&direct(oldPr,'shd')[0]?.cloneNode(true);
         oldPr?.remove();
         const pr = fromProfile(d, DRAFT_FORMAT.roles[role] || DRAFT_FORMAT.roles.body);
+        if(sourceShading){direct(pr,'shd').forEach(n=>n.remove());pr.appendChild(sourceShading);}
         p.insertBefore(pr, p.firstChild);
         if (!direct(pr, 'jc').length) property(pr, 'jc', {
             val: 'left'
@@ -421,8 +423,10 @@ async function buildWord({
         }
         for (const p of nodes(table, 'p')) {
             const old = direct(p, 'pPr')[0];
+            const sourceShading=old&&direct(old,'shd')[0]?.cloneNode(true);
             old?.remove();
             const pp = we(d, 'pPr');
+            if(sourceShading)pp.appendChild(sourceShading);
             pp.append(we(d, 'spacing', {
                 before: 0,
                 after: 0,

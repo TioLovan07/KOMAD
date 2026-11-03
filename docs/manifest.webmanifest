@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "KOMAD — Konversi Matriks Menjadi Draft",
-  "short_name": "KOMAD BALI",
+  "name": "KOMAD · Konversi Matriks Menjadi Draft",
+  "short_name": "KOMAD",
   "description": "Susun draft dari matriks harmonisasi.",
   "lang": "id",
   "start_url": "./?source=app",

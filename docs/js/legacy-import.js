@@ -2,6 +2,7 @@
  * Unsupported row topology is rejected, never flattened into guessed columns.
  */
 import '../vendor/legacy-doc.js';
+const rgb=n=>[n&255,(n>>>8)&255,(n>>>16)&255].map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase();
 const W='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
 export async function prepareWordFile(file) {
@@ -33,6 +34,7 @@ export async function prepareWordFile(file) {
         const props=[];
         if(p.pp) { const attrs={};if(Number.isFinite(p.pp.indL))attrs.left=p.pp.indL;if(Number.isFinite(p.pp.indR))attrs.right=p.pp.indR;if(Number.isFinite(p.pp.ind1))attrs[p.pp.ind1<0?'hanging':'firstLine']=Math.abs(p.pp.ind1);if(Object.keys(attrs).length)props.push('<w:ind '+Object.entries(attrs).map(([k,v])=>'w:'+k+'="'+v+'"').join(' ')+'/>'); }
         if(p.align)props.push('<w:jc w:val="'+(['left','center','right','both'][p.align]||'left')+'"/>');
+        if(p.pp?.shd!=null)props.push('<w:shd w:val="clear" w:fill="'+rgb(p.pp.shd)+'"/>');
         const runs=[];
         if(marker&&(p.runs||[]).some(r=>r.text?.trim()&&!r.strike&&!r.dstrike&&!r.hidden))runs.push('<w:r><w:t xml:space="preserve">'+escape(marker)+' </w:t></w:r>');
         for(const r of p.runs||[]) {
@@ -45,6 +47,8 @@ export async function prepareWordFile(file) {
             }
             if(!r.text)continue;
             const rp=[];
+            if(r.color!=null)rp.push('<w:color w:val="'+rgb(r.color)+'"/>');
+            if(r.highlight!=null)rp.push('<w:shd w:val="clear" w:fill="'+rgb(r.highlight)+'"/>');
             for(const [k,tag] of [['b','b'],['i','i'],['strike','strike'],['dstrike','dstrike'],['hidden','vanish']])if(r[k])rp.push('<w:'+tag+'/>');
             if(r.u)rp.push('<w:u w:val="single"/>');
             if(r.size)rp.push('<w:sz w:val="'+Math.round(r.size*2)+'"/>');
@@ -61,7 +65,7 @@ export async function prepareWordFile(file) {
         if(p.kind==='cell'||p.kind==='rowEnd'){cells.push(pending);pending=[];}
         if(p.kind==='rowEnd') {
             const expected=(p.tblw?.length||6)-1;
-            if(cells.length===expected)rows.push({cells,widths:p.tblw});
+            if(cells.length===expected)rows.push({cells,widths:p.tblw,shades:p.tblShd});
             else if(expected===5&&cells.length>10&&cells.slice(5,-5).every(c=>c.every(p=>(p.runs||[]).every(r=>!r.text?.trim()&&!r.image)))) {
                 rows.push({cells:cells.slice(0,5),widths:p.tblw},{cells:cells.slice(-5),widths:p.tblw});recoveredRows++;
             } else throw Error('Struktur tabel DOC tidak pasti ('+cells.length+' sel, diharapkan '+expected+'). Simpan sebagai .docx melalui Word; aplikasi tidak menebak kolom.');
@@ -81,7 +85,7 @@ export async function prepareWordFile(file) {
             if(indices.every((n,i)=>n>=0&&(!i||n>indices[i-1])))spans=indices.slice(1).map((n,i)=>n-indices[i]);
             else throw Error('Batas gabungan sel DOC belum pasti. Simpan sebagai .docx agar kolom tidak bergeser.');
         }
-        return '<w:tr>'+row.cells.map((c,i)=>'<w:tc><w:tcPr>'+(spans[i]>1?'<w:gridSpan w:val="'+spans[i]+'"/>':'')+'</w:tcPr>'+c.map(para).join('')+'</w:tc>').join('')+'</w:tr>';
+        return '<w:tr>'+row.cells.map((c,i)=>'<w:tc><w:tcPr>'+(row.shades?.[i]!=null?'<w:shd w:val="clear" w:fill="'+rgb(row.shades[i])+'"/>':'')+(spans[i]>1?'<w:gridSpan w:val="'+spans[i]+'"/>':'')+'</w:tcPr>'+c.map(para).join('')+'</w:tc>').join('')+'</w:tr>';
     }
     const body=rows.length?'<w:tbl>'+rows.map(tableRow).join('')+'</w:tbl>'+pending.map(para).join(''):pending.map(para).join('');
     const main='<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="'+W+'" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>'+body+'<w:sectPr><w:pgSz w:w="12191" w:h="18711"/><w:pgMar w:top="1417" w:left="1417" w:right="1417" w:bottom="1417"/></w:sectPr></w:body></w:document>';

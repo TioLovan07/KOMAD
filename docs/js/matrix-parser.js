@@ -1,3 +1,4 @@
+import {materializeSourceColors} from './source-colors.js';
 import {keepInstruction} from './control-text.js';
 import {isAnnexInput,annexTitles} from './annex-titles.js';
 import {documentMetadata} from './document-layout.js';
@@ -60,6 +61,8 @@ async function readMatrix(file) {
     const numberingFile = z.file('word/numbering.xml'),
         stylesFile = z.file('word/styles.xml');
     const catalog = matrixNumberingCatalog(numberingFile ? parse(await numberingFile.async('string')) : null, stylesFile ? parse(await stylesFile.async('string')) : null);
+    const themeFile=z.file('word/theme/theme1.xml');
+    materializeSourceColors(d, stylesFile ? parse(await stylesFile.async('string')) : null, themeFile ? parse(await themeFile.async('string')) : null);
     const body = nodes(d, 'body')[0],
         tables = direct(body, 'tbl');
     let table, header, cols;

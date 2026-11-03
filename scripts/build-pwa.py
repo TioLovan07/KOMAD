@@ -10,8 +10,8 @@ import json
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "docs"
 TEMPLATE = ROOT / "scripts" / "service-worker.template.js"
-RELEASE = "1.3.4"
-BUILD = "20261103.2"
+RELEASE = "1.3.5"
+BUILD = "20261103.5"
 
 
 def main():

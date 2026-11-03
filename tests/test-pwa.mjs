@@ -220,3 +220,8 @@ assert.equal(classify({
 }).code, 'SUPPORTED');
 console.log('PASS: HTTPS without offline API stays unavailable; supported environments proceed to cache verification.');
 process.exit(0);
+
+assert.equal(manifest.name,'KOMAD · Konversi Matriks Menjadi Draft');
+assert.equal(manifest.short_name,'KOMAD');
+assert.equal(manifest.id,'./');
+console.log('PASS: stable PWA identity and official release name.');
